@@ -37,6 +37,7 @@ class AuthController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
+        $name = $request->name;
         $email = $request->email;
         $password = $request->password;
 
@@ -67,7 +68,11 @@ class AuthController extends Controller
             ], 400);
         }
 
-        return response()->json('Successfully registered as ' . $email);
+        return response()->json([
+            'name' => $name,
+            'email' => $email,
+            'UID' => $uid,
+        ]);
     }
 
     public function login(Request $request)
@@ -139,7 +144,7 @@ class AuthController extends Controller
                 'errors' => $th->getMessage()
             ], 401);
         }
-        
+
         return response()->json('email sent');
     }
 }
