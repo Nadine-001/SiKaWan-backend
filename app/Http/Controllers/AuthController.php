@@ -44,6 +44,9 @@ class AuthController extends Controller
         try {
             $new_user = $this->auth->createUserWithEmailAndPassword($email, $password);
             $uid = $new_user->uid;
+
+            // $token = $this->auth->createCustomToken($uid);
+            // dd($token);
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'registration failed',
@@ -59,7 +62,6 @@ class AuthController extends Controller
                 'name' => $request->name,
                 'email' => $email,
                 'position' => $request->position,
-                // 'uid' => $uid,
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -71,6 +73,7 @@ class AuthController extends Controller
         return response()->json([
             'name' => $name,
             'email' => $email,
+            // 'token' => $token,
             'UID' => $uid,
         ]);
     }
@@ -91,12 +94,12 @@ class AuthController extends Controller
 
         try {
             $user = $this->auth->signInWithEmailAndPassword($email, $password);
+
             $uid = $user->firebaseUserId();
+            $token = $user->idToken();
+
             $request->session()->start();
             $request->session()->put('uid', $uid);
-
-            // $uid = $user->data()['localId'];
-            // $this->database->getReference('UID')->set($uid);
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'login failed',
@@ -107,12 +110,15 @@ class AuthController extends Controller
         return response()->json([
             'email' => $email,
             'UID' => $uid,
+            'token' => $token,
         ]);
     }
 
     public function logout(Request $request)
     {
         try {
+            $uid = $request->session()->get('uid');
+            $this->auth->revokeRefreshTokens($uid);
             $request->session()->forget('uid');
         } catch (\Throwable $th) {
             return response()->json([
