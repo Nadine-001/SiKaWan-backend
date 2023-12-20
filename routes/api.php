@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Controller;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProjectController;
 use Illuminate\Http\Request;
@@ -19,13 +20,14 @@ use Illuminate\Support\Facades\Route;
 Route::post('/sign_up', [AuthController::class, 'sign_up']); //Sign Up
 Route::post('/login', [AuthController::class, 'login']); //Login
 Route::post('/forgot_password', [AuthController::class, 'forgot_password']); //Lupa Password
+Route::post('/door_access', [PresenceController::class, 'door_access']); //Buka Pintu
 
 Route::group(['middleware' => 'firebase'], function () {
     Route::get('/logout', [AuthController::class, 'logout']); //Logout
     Route::post('/entry', [PresenceController::class, 'entry']); //Absen Masuk
-    Route::post('/exit', [PresenceController::class, 'exit']); //Absen Masuk
+    Route::post('/exit', [PresenceController::class, 'exit']); //Absen Keluar
     Route::get('/history', [PresenceController::class, 'history']); //Riwayat Absensi
-    Route::get('/statistic', [PresenceController::class, 'statistic']); //Riwayat Absensi
+    Route::get('/statistic', [PresenceController::class, 'statistic']); //Statistik Kinerja
 
     Route::post('/create_project', [ProjectController::class, 'create_project']); //Absen Masuk
     Route::get('/projects', [ProjectController::class, 'project_list']); //Daftar Proyek
