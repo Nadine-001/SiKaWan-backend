@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Google\Cloud\Core\Timestamp;
 use Google\Cloud\Firestore\FieldValue;
 use Illuminate\Http\Request;
@@ -63,7 +64,10 @@ class ProjectController extends Controller
 
             $assigned_to = FieldValue::arrayUnion($uids);
 
-            $project = $this->firestore->collection('projects')->newDocument();
+            $start_id = Carbon::parse($start_date)->format('jny');
+            $end_id = Carbon::parse($deadline)->format('jny');
+
+            $project = $this->firestore->collection('projects')->document($start_id . '-' . $end_id);
 
             $project->set([
                 'name' => $request->name,
@@ -115,10 +119,16 @@ class ProjectController extends Controller
     {
         $project = $this->firestore->collection('projects')
             ->document($project_id)
-            ->snapshot()
-            ->data();
+            ->snapshot();
+            // ->data();
 
         try {
+            $project_name = $project->get('name');
+            $id = $project->id();
+            $deadline = Carbon::parse($project->get('deadline'));
+            $value = $project->get('value');
+            $description = $project->get('description');
+
             $assignee = [];
             for ($i = 0; $i < count($project['assigned_to']); $i++) {
                 $names = $project['assigned_to'][$i];
@@ -139,7 +149,11 @@ class ProjectController extends Controller
         }
 
         return response()->json([
-            'project' => $project,
+            'project_name' => $project_name,
+            'id' => $id,
+            'deadline' => $deadline->format('j F Y'),
+            'value' => $value,
+            'description' => $description,
             'assignee' => $assignee,
         ]);
     }
