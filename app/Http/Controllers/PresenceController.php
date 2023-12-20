@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
+use Google\Cloud\Core\GeoPoint;
 use Google\Cloud\Core\Timestamp;
 use Google\Cloud\Storage\Connection\Rest;
 use Illuminate\Http\Request;
@@ -54,7 +56,8 @@ class PresenceController extends Controller
             $year = $request->year;
             $time = $request->time;
 
-            $entry_time = new \Google\Cloud\Core\Timestamp(new \DateTime($date . '-' . $month . '-' . $year . ' ' . $time));
+            $entry_time = new Timestamp(new \DateTime($date . '-' . $month . '-' . $year . ' ' . $time));
+            // $entry_location = new GeoPoint();
 
             $entry = $this->firestore->collection('presence_history')->document($name . '-' . date("jny"));
 
@@ -108,6 +111,7 @@ class PresenceController extends Controller
             $time = $request->time;
 
             $exit_time = new Timestamp(new \DateTime($date . '-' . $month . '-' . $year . ' ' . $time));
+            // $exit_location = new GeoPoint();
 
             $exit = $this->firestore->collection('presence_history')->document($name . '-' . date('jny'));
 
@@ -126,6 +130,36 @@ class PresenceController extends Controller
         return response()->json('success add exit time');
     }
 
+    public function door_access(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id_card' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        $id_card = intval($request->id_card);
+
+        try {
+            $id_card = $this->firestore->collection('users')->where('id_card', '==', $id_card);
+
+            $documents = $id_card->documents();
+
+            foreach ($documents as $document) {
+                $name = $document->get('name');
+            }
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'AccesS denied. ID Card not found.',
+                'errors' => $th->getMessage()
+            ], 400);
+        }
+
+        return response()->json('Access confirmed. Hello, ' . $name);
+    }
+
     public function history(Request $request)
     {
         $uid = $request->session()->get('uid');
@@ -134,30 +168,43 @@ class PresenceController extends Controller
             $users = $this->firestore->collection('users')
                 ->document($uid)
                 ->snapshot();
+
+            if (!$users->exists()) {
+                return response()->json([
+                    'message' => 'user not found',
+                ], 404);
+            }
+
             $name = $users->get('name');
             $position = $users->get('position');
 
             $history = $this->firestore->collection('presence_history')
-                ->document($name . '-' . date('jny'))
-                ->snapshot();
+                ->where('uid', '==', $uid);
 
-            $day = $history->get('day');
-            $date = $history->get('date');
-            $month = $history->get('month');
-            $year = $history->get('year');
-            $created_date = date_create($date . '-' . $month . '-' . $year);
-            $formated_date = date_format($created_date, 'j F Y');
-            $day_date = $day . ', ' . $formated_date;
+            $documents = $history->documents();
 
-            $time = $history->get('entry_time');
-            $entry_time = explode('T', $time);
+            $history_list = [];
+            foreach ($documents as $document) {
+                $created_date = Carbon::createFromDate(
+                    $document->get('year'),
+                    $document->get('month'),
+                    $document->get('date')
+                );
 
-            // dd(explode('.', $entry_time[1])[0]);
+                $day_date = $created_date->format('l, j F Y');
 
-            $time = $history->get('exit_time');
-            $exit_time = explode('T', $time);
+                $entry_time = Carbon::parse($document->get('entry_time'));
+                $exit_time = Carbon::parse($document->get('exit_time'));
 
-            $status = $history->get('status');
+                $status = $document->get('status');
+
+                $history_list[] = [
+                    'day_date' => $day_date,
+                    'entry_time' => $entry_time->format('H:i:s'),
+                    'exit_time' => $exit_time->format('H:i:s'),
+                    'status' => $status,
+                ];
+            }
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'fetch data from database failed',
@@ -168,11 +215,7 @@ class PresenceController extends Controller
         return response()->json([
             'name' => $name,
             'position' => $position,
-            'month' => $month,
-            'day_date' => $day_date,
-            'entry_time' => explode('.', $entry_time[1])[0],
-            'exit_time' => explode('.', $exit_time[1])[0],
-            'status' => $status,
+            'history_list' => $history_list,
         ]);
     }
 
@@ -187,14 +230,13 @@ class PresenceController extends Controller
                 ->snapshot()
                 ->get('name');
 
-            $presence_day = $users->where('name', '==', $name)
-                ->count();
+            $presence_history = $this->firestore->collection('presence_history')
+                ->where('uid', '==', $uid);
+
+            $presence_day = $presence_history->count();
 
             $presence_percent = $presence_day / 26 * 100;
             $absent_percent = 100 - $presence_percent;
-
-            $presence_history = $this->firestore->collection('presence_history')
-                ->where('uid', '==', $uid);
 
             $on_time_percent = $presence_history->where('status', '==', 'Tepat Waktu')
                 ->count();
