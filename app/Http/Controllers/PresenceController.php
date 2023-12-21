@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Google\Cloud\Core\GeoPoint;
 use Google\Cloud\Core\Timestamp;
-use Google\Cloud\Storage\Connection\Rest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Kreait\Firebase\Factory;
@@ -36,7 +35,8 @@ class PresenceController extends Controller
             'month' => 'required',
             'year' => 'required',
             'time' => 'required',
-            'entry_location' => 'required',
+            'latitude' => 'required',
+            'longitude' => 'required',
             'status' => 'required',
         ]);
 
@@ -55,9 +55,11 @@ class PresenceController extends Controller
             $month = $request->month;
             $year = $request->year;
             $time = $request->time;
+            $latitude = $request->latitude;
+            $longitude = $request->longitude;
 
             $entry_time = new Timestamp(new \DateTime($date . '-' . $month . '-' . $year . ' ' . $time));
-            // $entry_location = new GeoPoint();
+            $entry_location = new GeoPoint($latitude, $longitude);
 
             $entry = $this->firestore->collection('presence_history')->document($name . '-' . date("jny"));
 
@@ -70,7 +72,7 @@ class PresenceController extends Controller
                 'entry_time' => $entry_time,
                 'exit_time' => null,
                 'entry_note' => $request->entry_note,
-                'entry_location' => $request->entry_location,
+                'entry_location' => $entry_location,
                 'exit_location' => null,
                 'status' => $request->status,
             ]);
@@ -91,7 +93,8 @@ class PresenceController extends Controller
             'month' => 'required',
             'year' => 'required',
             'time' => 'required',
-            'exit_location' => 'required',
+            'latitude' => 'required',
+            'longitude' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -109,16 +112,18 @@ class PresenceController extends Controller
             $month = $request->month;
             $year = $request->year;
             $time = $request->time;
+            $latitude = $request->latitude;
+            $longitude = $request->longitude;
 
             $exit_time = new Timestamp(new \DateTime($date . '-' . $month . '-' . $year . ' ' . $time));
-            // $exit_location = new GeoPoint();
+            $exit_location = new GeoPoint($latitude, $longitude);
 
             $exit = $this->firestore->collection('presence_history')->document($name . '-' . date('jny'));
 
             $exit->update([
                 ['path' => 'exit_time', 'value' => $exit_time],
                 ['path' => 'exit_note', 'value' => $request->exit_note],
-                ['path' => 'exit_location', 'value' => $request->exit_location]
+                ['path' => 'exit_location', 'value' => $exit_location]
             ]);
         } catch (\Throwable $th) {
             return response()->json([
