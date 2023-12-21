@@ -224,11 +224,18 @@ class PresenceController extends Controller
         $uid = $request->session()->get('uid');
 
         try {
-            $users = $this->firestore->collection('users');
+            $users = $this->firestore->collection('users')
+                ->document($uid)
+                ->snapshot();
 
-            $name = $users->document($uid)
-                ->snapshot()
-                ->get('name');
+            if (!$users->exists()) {
+                return response()->json([
+                    'message' => 'user not found',
+                ], 404);
+            }
+
+            $name = $users->get('name');
+            $position = $users->get('position');
 
             $presence_history = $this->firestore->collection('presence_history')
                 ->where('uid', '==', $uid);
@@ -251,6 +258,8 @@ class PresenceController extends Controller
         }
 
         return response()->json([
+            'name' => $name,
+            'position' => $position,
             'presence_percent' => $presence_percent,
             'absent_percent=' => $absent_percent,
             'on_time_percent' => $on_time_percent,
