@@ -23,6 +23,7 @@ Route::post('/forgot_password', [AuthController::class, 'forgot_password']); //L
 Route::post('/door_access', [PresenceController::class, 'door_access']); //Buka Pintu
 
 Route::group(['middleware' => 'firebase'], function () {
+    Route::get('/profile', [AuthController::class, 'profile']); //Logout
     Route::get('/logout', [AuthController::class, 'logout']); //Logout
     Route::post('/entry', [PresenceController::class, 'entry']); //Absen Masuk
     Route::post('/exit', [PresenceController::class, 'exit']); //Absen Keluar

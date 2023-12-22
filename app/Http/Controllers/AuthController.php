@@ -44,9 +44,6 @@ class AuthController extends Controller
         try {
             $new_user = $this->auth->createUserWithEmailAndPassword($email, $password);
             $uid = $new_user->uid;
-
-            // $token = $this->auth->createCustomToken($uid);
-            // dd($token);
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'registration failed',
@@ -114,10 +111,42 @@ class AuthController extends Controller
         ]);
     }
 
+    public function profile(Request $request)
+    {
+        $uid = $request->session()->get('uid');
+
+        try {
+            $user = $this->firestore->collection('users')
+                ->document($uid)
+                ->snapshot();
+
+            if (!$user->exists()) {
+                return response()->json([
+                    'message' => 'user not found',
+                ], 404);
+            }
+
+            $name = $user->get('name');
+            $position = $user->get('position');
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'failed to get user data',
+                'errors' => $th->getMessage()
+            ], 400);
+        }
+
+        return response()->json([
+            'UID' => $uid,
+            'name' => $name,
+            'position' => $position,
+        ]);
+    }
+
     public function logout(Request $request)
     {
+        $uid = $request->session()->get('uid');
+
         try {
-            $uid = $request->session()->get('uid');
             $this->auth->revokeRefreshTokens($uid);
             $request->session()->forget('uid');
         } catch (\Throwable $th) {

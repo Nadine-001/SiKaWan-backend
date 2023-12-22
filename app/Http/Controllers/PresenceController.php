@@ -44,12 +44,19 @@ class PresenceController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
+        $uid = $request->session()->get('uid');
+
         try {
-            $uid = $request->session()->get('uid');
             $name = $this->firestore->collection('users')
                 ->document($uid)
                 ->snapshot()
                 ->get('name');
+
+            if (!$name->exists()) {
+                return response()->json([
+                    'message' => 'user not found',
+                ], 404);
+            }
 
             $date = $request->date;
             $month = $request->month;
@@ -101,12 +108,19 @@ class PresenceController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
+        $uid = $request->session()->get('uid');
+
         try {
-            $uid = $request->session()->get('uid');
             $name = $this->firestore->collection('users')
                 ->document($uid)
                 ->snapshot()
                 ->get('name');
+
+            if (!$name->exists()) {
+                return response()->json([
+                    'message' => 'user not found',
+                ], 404);
+            }
 
             $date = $request->date;
             $month = $request->month;
@@ -157,7 +171,7 @@ class PresenceController extends Controller
             }
         } catch (\Throwable $th) {
             return response()->json([
-                'message' => 'AccesS denied. ID Card not found.',
+                'message' => 'Access denied. ID Card not found.',
                 'errors' => $th->getMessage()
             ], 400);
         }
@@ -170,18 +184,18 @@ class PresenceController extends Controller
         $uid = $request->session()->get('uid');
 
         try {
-            $users = $this->firestore->collection('users')
+            $user = $this->firestore->collection('users')
                 ->document($uid)
                 ->snapshot();
 
-            if (!$users->exists()) {
+            if (!$user->exists()) {
                 return response()->json([
                     'message' => 'user not found',
                 ], 404);
             }
 
-            $name = $users->get('name');
-            $position = $users->get('position');
+            $name = $user->get('name');
+            $position = $user->get('position');
 
             $history = $this->firestore->collection('presence_history')
                 ->where('uid', '==', $uid);
@@ -229,18 +243,18 @@ class PresenceController extends Controller
         $uid = $request->session()->get('uid');
 
         try {
-            $users = $this->firestore->collection('users')
+            $user = $this->firestore->collection('users')
                 ->document($uid)
                 ->snapshot();
 
-            if (!$users->exists()) {
+            if (!$user->exists()) {
                 return response()->json([
                     'message' => 'user not found',
                 ], 404);
             }
 
-            $name = $users->get('name');
-            $position = $users->get('position');
+            $name = $user->get('name');
+            $position = $user->get('position');
 
             $presence_history = $this->firestore->collection('presence_history')
                 ->where('uid', '==', $uid);
