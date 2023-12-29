@@ -56,7 +56,7 @@ class AuthController extends Controller
 
             $user->set([
                 'id_card' => null,
-                'name' => $request->name,
+                'name' => $name,
                 'email' => $email,
                 'position' => $request->position,
             ]);
@@ -126,6 +126,7 @@ class AuthController extends Controller
                 ], 404);
             }
 
+            $email = $user->get('email');
             $name = $user->get('name');
             $position = $user->get('position');
         } catch (\Throwable $th) {
@@ -137,6 +138,7 @@ class AuthController extends Controller
 
         return response()->json([
             'UID' => $uid,
+            'email' => $email,
             'name' => $name,
             'position' => $position,
         ]);
