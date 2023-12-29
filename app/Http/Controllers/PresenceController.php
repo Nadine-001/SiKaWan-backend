@@ -52,11 +52,11 @@ class PresenceController extends Controller
                 ->snapshot()
                 ->get('name');
 
-            if (!$name->exists()) {
-                return response()->json([
-                    'message' => 'user not found',
-                ], 404);
-            }
+            // if (!$name->exists()) {
+            //     return response()->json([
+            //         'message' => 'user not found',
+            //     ], 404);
+            // }
 
             $date = $request->date;
             $month = $request->month;
@@ -68,10 +68,11 @@ class PresenceController extends Controller
             $entry_time = new Timestamp(new \DateTime($date . '-' . $month . '-' . $year . ' ' . $time));
             $entry_location = new GeoPoint($latitude, $longitude);
 
-            $entry = $this->firestore->collection('presence_history')->document($name . '-' . date("jny"));
+            $entry = $this->firestore->collection('presence_history')->document($name . '-' . $date . $month . $year);
 
             $entry->set([
                 'uid' => $uid,
+                'name' => $name,
                 'day' => $request->day,
                 'date' => $date,
                 'month' => $month,
@@ -82,6 +83,7 @@ class PresenceController extends Controller
                 'entry_location' => $entry_location,
                 'exit_location' => null,
                 'status' => $request->status,
+                'button_state' => true
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -116,11 +118,11 @@ class PresenceController extends Controller
                 ->snapshot()
                 ->get('name');
 
-            if (!$name->exists()) {
-                return response()->json([
-                    'message' => 'user not found',
-                ], 404);
-            }
+            // if (!$name->exists()) {
+            //     return response()->json([
+            //         'message' => 'user not found',
+            //     ], 404);
+            // }
 
             $date = $request->date;
             $month = $request->month;
@@ -132,12 +134,13 @@ class PresenceController extends Controller
             $exit_time = new Timestamp(new \DateTime($date . '-' . $month . '-' . $year . ' ' . $time));
             $exit_location = new GeoPoint($latitude, $longitude);
 
-            $exit = $this->firestore->collection('presence_history')->document($name . '-' . date('jny'));
+            $exit = $this->firestore->collection('presence_history')->document($name . '-' . $date . $month . $year);
 
             $exit->update([
                 ['path' => 'exit_time', 'value' => $exit_time],
                 ['path' => 'exit_note', 'value' => $request->exit_note],
-                ['path' => 'exit_location', 'value' => $exit_location]
+                ['path' => 'exit_location', 'value' => $exit_location],
+                ['path' => 'button_state', 'value' => false]
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -149,34 +152,22 @@ class PresenceController extends Controller
         return response()->json('success add exit time');
     }
 
-    public function door_access(Request $request)
+    public function door_access(Request $request, $id_card)
     {
-        $validator = Validator::make($request->all(), [
-            'id_card' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 406);
-        }
-
-        $id_card = intval($request->id_card);
-
         try {
-            $id_card = $this->firestore->collection('users')->where('id_card', '==', $id_card);
+            $id_card = intval($request->id_card);
+            $users = $this->firestore->collection('users')->where('id_card', '==', $id_card);
 
-            $documents = $id_card->documents();
+            $documents = $users->documents();
 
             foreach ($documents as $document) {
                 $name = $document->get('name');
             }
-        } catch (\Throwable $th) {
-            return response()->json([
-                'message' => 'Access denied. ID Card not found.',
-                'errors' => $th->getMessage()
-            ], 400);
-        }
 
-        return response()->json('Access confirmed. Hello, ' . $name);
+            return response()->json('Access confirmed. Hello, ' . $name . '!');
+        } catch (\Throwable $th) {
+            return response()->json('Access denied. ID Card not found.', 404);
+        }
     }
 
     public function history(Request $request)
@@ -219,8 +210,8 @@ class PresenceController extends Controller
 
                 $history_list[] = [
                     'day_date' => $day_date,
-                    'entry_time' => $entry_time->format('H:i:s'),
-                    'exit_time' => $exit_time->format('H:i:s'),
+                    'entry_time' => $entry_time->format('H:i:s A'),
+                    'exit_time' => $exit_time->format('H:i:s A'),
                     'status' => $status,
                 ];
             }
