@@ -46,6 +46,7 @@ class ProjectController extends Controller
         try {
             $start_date = new Timestamp(new \DateTime($request->start_date));
             $deadline = new Timestamp(new \DateTime($request->deadline));
+            $month = intval(Carbon::parse($deadline)->format('n'));
 
             $names = explode(',', $request->assigned_to);
 
@@ -64,15 +65,17 @@ class ProjectController extends Controller
 
             $assigned_to = FieldValue::arrayUnion($uids);
 
-            $start_id = Carbon::parse($start_date)->format('jny');
-            $end_id = Carbon::parse($deadline)->format('jny');
+            $start_id = Carbon::parse($start_date)->format('dmy');
+            $end_id = Carbon::parse($deadline)->format('dmy');
+            $random_int = str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
 
-            $project = $this->firestore->collection('projects')->document($start_id . '-' . $end_id);
+            $project = $this->firestore->collection('projects')->document($start_id . $end_id . $random_int);
 
             $project->set([
                 'name' => $request->name,
                 'start_date' => $start_date,
                 'deadline' => $deadline,
+                'deadline_month' => $month,
                 'value' => $request->value,
                 'description' => $request->description,
                 'assigned_to' => $assigned_to,
@@ -88,9 +91,19 @@ class ProjectController extends Controller
         return response()->json('success add project');
     }
 
-    public function project_list()
+    public function project_list(Request $request)
     {
-        $documents = $this->firestore->collection('projects')->documents();
+        $query = $this->firestore->collection('projects');
+
+        if ($request->status) {
+            $query = $query->where('status', '=', $request->status);
+        }
+
+        if ($request->month) {
+            $query = $query->where('deadline_month', '=', $request->month);
+        }
+
+        $documents =  $query->documents();
 
         try {
             $project_data = [];
@@ -120,7 +133,7 @@ class ProjectController extends Controller
         $project = $this->firestore->collection('projects')
             ->document($project_id)
             ->snapshot();
-            // ->data();
+        // ->data();
 
         try {
             $project_name = $project->get('name');
@@ -128,6 +141,7 @@ class ProjectController extends Controller
             $deadline = Carbon::parse($project->get('deadline'));
             $value = $project->get('value');
             $description = $project->get('description');
+            $bonus = $value * 5 / 100;
 
             $assignee = [];
             for ($i = 0; $i < count($project['assigned_to']); $i++) {
@@ -153,6 +167,7 @@ class ProjectController extends Controller
             'id' => $id,
             'deadline' => $deadline->format('j F Y'),
             'value' => $value,
+            'bonus' => $bonus,
             'description' => $description,
             'assignee' => $assignee,
         ]);
@@ -175,11 +190,19 @@ class ProjectController extends Controller
                 'errors' => $th->getMessage()
             ], 400);
         }
+
+        return response()->json('success update project');
     }
 
     public function delete_project(Request $request, $project_id)
     {
         try {
+            $project = $this->firestore->collection('projects')->document($project_id)->snapshot()->data();
+
+            if (!$project) {
+                return response()->json('project not found', 404);
+            }
+
             $this->firestore->collection('projects')->document($project_id)->delete();
         } catch (\Throwable $th) {
             return response()->json([
@@ -187,5 +210,7 @@ class ProjectController extends Controller
                 'errors' => $th->getMessage()
             ], 400);
         }
+
+        return response()->json('success delete project');
     }
 }
