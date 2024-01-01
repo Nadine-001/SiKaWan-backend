@@ -138,6 +138,7 @@ class ProjectController extends Controller
         try {
             $project_name = $project->get('name');
             $id = $project->id();
+            $start_date = Carbon::parse($project->get('start_date'));
             $deadline = Carbon::parse($project->get('deadline'));
             $value = $project->get('value');
             $description = $project->get('description');
@@ -165,6 +166,7 @@ class ProjectController extends Controller
         return response()->json([
             'project_name' => $project_name,
             'id' => $id,
+            'start_date' => $start_date->format('j F Y'),
             'deadline' => $deadline->format('j F Y'),
             'value' => $value,
             'bonus' => $bonus,
