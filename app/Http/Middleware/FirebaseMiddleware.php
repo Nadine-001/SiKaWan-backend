@@ -32,7 +32,7 @@ class FirebaseMiddleware
             return response()->json([
                 'message' => 'invalid token',
                 'error' => $e->getMessage()
-            ]);
+            ], 401);
         }
     }
 }

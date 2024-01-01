@@ -58,6 +58,6 @@ class AdminMiddleware
 
         return response()->json([
             'message' => 'unauthorized',
-        ]);
+        ], 401);
     }
 }

@@ -108,6 +108,36 @@ class AuthController extends Controller
         ]);
     }
 
+    public function uploadPhoto(Request $request)
+    {
+        $uid = $this->getUid($request);
+
+        try {
+            $image = $request->file('image');
+            $name = $this->firestore->collection('users')
+                ->document($uid)
+                ->snapshot()
+                ->get('name');
+
+            $firebase_storage_path = 'ProfilePhoto/';
+            $localfolder = public_path('firebase-temp-uploads') . '/';
+            $extension = $image->getClientOriginalExtension();
+            $file = $name . '.' . $extension;
+
+            $image->move($localfolder, $file);
+            $uploadedfile = fopen($localfolder . $file, 'r');
+            app('firebase.storage')->getBucket()->upload($uploadedfile, ['name' => $firebase_storage_path . $file]);
+            unlink($localfolder . $file);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'failed to upload image',
+                'errors' => $th->getMessage()
+            ], 400);
+        }
+
+        return response()->json('upload image success');
+    }
+
     public function profile(Request $request)
     {
         $uid = $this->getUid($request);
