@@ -180,12 +180,26 @@ class ProjectController extends Controller
         try {
             $project = $this->firestore->collection('projects')->document($project_id);
 
-            $data = [];
-            foreach ($request->all() as $key => $value) {
-                array_push($data, ['path' => $key, 'value' => $value]);
-            }
+            $project_name = $request->name;
+            $start_date = new Timestamp(new \DateTime($request->start_date));
+            $deadline = new Timestamp(new \DateTime($request->deadline));
+            $month = intval(Carbon::parse($deadline)->format('n'));
+            $value = intval($request->value);
+            $description = $request->description;
+            $status = $request->status;
+            $names = explode(',', $request->assigned_to);
+            $assigned_to = FieldValue::arrayUnion($names);
 
-            $project->update($data);
+            $project->update([
+                ['path' => 'name', 'value' => $project_name],
+                ['path' => 'start_date', 'value' => $start_date],
+                ['path' => 'deadline', 'value' => $deadline],
+                ['path' => 'deadline_month', 'value' => $month],
+                ['path' => 'value', 'value' => $value],
+                ['path' => 'status', 'value' => $status],
+                ['path' => 'description', 'value' => $description],
+                ['path' => 'assigned_to', 'value' => $assigned_to]
+            ]);
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'update project failed',
