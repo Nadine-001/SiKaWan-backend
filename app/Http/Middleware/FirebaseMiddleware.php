@@ -18,9 +18,7 @@ class FirebaseMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $response = (object) [];
         $token = $request->bearerToken();
-        $response->token = $token;
 
         $auth = app('firebase.auth');
         try {

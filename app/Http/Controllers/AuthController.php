@@ -94,9 +94,6 @@ class AuthController extends Controller
 
             $uid = $user->firebaseUserId();
             $token = $user->idToken();
-
-            $request->session()->start();
-            $request->session()->put('uid', $uid);
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'login failed',
@@ -113,7 +110,7 @@ class AuthController extends Controller
 
     public function profile(Request $request)
     {
-        $uid = $request->session()->get('uid');
+        $uid = $this->getUid($request);
 
         try {
             $user = $this->firestore->collection('users')
@@ -146,11 +143,8 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $uid = $request->session()->get('uid');
-
         try {
-            $this->auth->revokeRefreshTokens($uid);
-            $request->session()->forget('uid');
+            $this->auth->revokeRefreshTokens($this->getUid($request));
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'logout failed',
@@ -183,5 +177,15 @@ class AuthController extends Controller
         }
 
         return response()->json('email sent');
+    }
+
+    public function getUid(Request $request)
+    {
+
+        $token = $request->bearerToken();
+        $verifiedIdToken = $this->auth->verifyIdToken($token);
+        $uid = $verifiedIdToken->claims()->get('sub');
+
+        return $uid;
     }
 }
