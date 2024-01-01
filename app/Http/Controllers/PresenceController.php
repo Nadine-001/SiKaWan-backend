@@ -44,7 +44,7 @@ class PresenceController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        $uid = $request->session()->get('uid');
+        $uid = $this->getUid($request);
 
         try {
             $name = $this->firestore->collection('users')
@@ -110,7 +110,7 @@ class PresenceController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        $uid = $request->session()->get('uid');
+        $uid = $this->getUid($request);
 
         try {
             $name = $this->firestore->collection('users')
@@ -172,7 +172,7 @@ class PresenceController extends Controller
 
     public function history(Request $request)
     {
-        $uid = $request->session()->get('uid');
+        $uid = $this->getUid($request);
 
         try {
             $user = $this->firestore->collection('users')
@@ -231,7 +231,7 @@ class PresenceController extends Controller
 
     public function statistic(Request $request)
     {
-        $uid = $request->session()->get('uid');
+        $uid = $this->getUid($request);
 
         try {
             $user = $this->firestore->collection('users')
@@ -275,5 +275,14 @@ class PresenceController extends Controller
             'on_time_percent' => $on_time_percent,
             'late_percent' => $late_percent,
         ]);
+    }
+
+    public function getUid(Request $request)
+    {
+        $token = $request->bearerToken();
+        $verifiedIdToken = $this->auth->verifyIdToken($token);
+        $uid = $verifiedIdToken->claims()->get('sub');
+
+        return $uid;
     }
 }

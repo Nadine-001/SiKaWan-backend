@@ -181,7 +181,6 @@ class AuthController extends Controller
 
     public function getUid(Request $request)
     {
-
         $token = $request->bearerToken();
         $verifiedIdToken = $this->auth->verifyIdToken($token);
         $uid = $verifiedIdToken->claims()->get('sub');
