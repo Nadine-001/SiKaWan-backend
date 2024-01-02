@@ -28,8 +28,8 @@ Route::post('/sign_up_admin', [AdminController::class, 'sign_up']); //Sign Up Ad
 Route::post('/login_admin', [AdminController::class, 'login']); //Login Admin
 
 Route::group(['middleware' => 'firebase'], function () {
-    Route::post('/profilePhoto', [AuthController::class, 'uploadPhoto']); //Profile
-    Route::get('/profile', [AuthController::class, 'profile']); //Profile
+    Route::post('/profilePhoto', [AuthController::class, 'uploadPhoto']); //Upload Foto Profil
+    Route::get('/profile', [AuthController::class, 'profile']); //Profil
     Route::get('/logout', [AuthController::class, 'logout']); //Logout
     Route::post('/entry', [PresenceController::class, 'entry']); //Absen Masuk
     Route::post('/exit', [PresenceController::class, 'exit']); //Absen Keluar
