@@ -163,6 +163,26 @@ class ProjectController extends Controller
             $description = $project->get('description');
             $bonus = $value * 5 / 100;
             $assignee = $project->get('assigned_to');
+
+            for ($i = 0; $i < count($assignee); $i++) {
+                $name = $assignee[$i]['name'];
+                $expiresAt = new \DateTime('tomorrow');
+
+                $imageReference = app('firebase.storage')->getBucket()->object('ProfilePhoto/' . $name . '.jpg');
+                if ($imageReference->exists()) {
+                    $image = $imageReference->signedUrl($expiresAt);
+                    $assignee[$i]['profile_photo'] = $image;
+                }
+            }
+
+            // foreach ($assignee as $name ) {
+            //     $expiresAt = new \DateTime('tomorrow');
+
+            //     $imageReference = app('firebase.storage')->getBucket()->object('ProfilePhoto/' . $name . '.jpg');
+            //     if ($imageReference->exists())
+            //         $image = $imageReference->signedUrl($expiresAt);
+            // }
+
             // for ($i = 0; $i < count($project['assigned_to']); $i++) {
             //     $names = $project['assigned_to'][$i];
 
