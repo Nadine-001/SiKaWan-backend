@@ -28,7 +28,9 @@ Route::post('/sign_up_admin', [AdminController::class, 'sign_up']); //Sign Up Ad
 Route::post('/login_admin', [AdminController::class, 'login']); //Login Admin
 
 Route::group(['middleware' => 'firebase'], function () {
-    Route::post('/profilePhoto', [AuthController::class, 'uploadPhoto']); //Upload Foto Profil
+    Route::post('/upload_photo', [AuthController::class, 'upload_photo']); //Upload Foto Profil
+    Route::get('/get_photo', [AuthController::class, 'get_photo']); //Menampilkan Foto Profil
+    Route::delete('/delete_photo', [AuthController::class, 'delete_photo']); //Hapus Foto Profil
     Route::get('/profile', [AuthController::class, 'profile']); //Profil
     Route::get('/logout', [AuthController::class, 'logout']); //Logout
     Route::post('/entry', [PresenceController::class, 'entry']); //Absen Masuk

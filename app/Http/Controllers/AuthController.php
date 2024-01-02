@@ -108,34 +108,97 @@ class AuthController extends Controller
         ]);
     }
 
-    public function uploadPhoto(Request $request)
+    public function upload_photo(Request $request)
     {
         $uid = $this->getUid($request);
 
         try {
             $image = $request->file('image');
-            $name = $this->firestore->collection('users')
-                ->document($uid)
-                ->snapshot()
-                ->get('name');
 
             $firebase_storage_path = 'ProfilePhoto/';
             $localfolder = public_path('firebase-temp-uploads') . '/';
-            $extension = $image->getClientOriginalExtension();
-            $file = $name . '.' . $extension;
+
+            $users = $this->firestore->collection('users')->document($uid);
+
+            $name = $users->snapshot()->get('name');
+            $file = $name . '.jpg';
+
+            // $extension = $image->getClientOriginalExtension();
 
             $image->move($localfolder, $file);
             $uploadedfile = fopen($localfolder . $file, 'r');
             app('firebase.storage')->getBucket()->upload($uploadedfile, ['name' => $firebase_storage_path . $file]);
             unlink($localfolder . $file);
+
+            $users->update([
+                ['path' => 'image', 'value' => $firebase_storage_path . $file]
+            ]);
         } catch (\Throwable $th) {
             return response()->json([
-                'message' => 'failed to upload image',
+                'message' => 'failed to upload profile photo',
                 'errors' => $th->getMessage()
             ], 400);
         }
 
-        return response()->json('upload image success');
+        return response()->json('upload profile photo success');
+    }
+
+    public function get_photo(Request $request)
+    {
+        $uid = $this->getUid($request);
+
+        $imagePath = $this->firestore->collection('users')
+            ->document($uid)
+            ->snapshot()
+            ->get('image');
+
+        try {
+            if (!$imagePath) {
+                return response()->json('profile photo not found', 404);
+            }
+
+            $name = $this->firestore->collection('users')
+                ->document($uid)
+                ->snapshot()
+                ->get('name');
+
+            $expiresAt = new \DateTime('tomorrow');
+
+            $imageReference = app('firebase.storage')->getBucket()->object('ProfilePhoto/' . $name . '.jpg');
+            if ($imageReference->exists())
+                $image = $imageReference->signedUrl($expiresAt);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'failed to get profile photo',
+                'errors' => $th->getMessage()
+            ], 400);
+        }
+
+        return response()->json($image);
+    }
+
+    public function delete_photo(Request $request)
+    {
+        $uid = $this->getUid($request);
+
+        try {
+            $users = $this->firestore->collection('users')->document($uid);
+
+            $name = $users->snapshot()->get('name');
+
+            app('firebase.storage')->getBucket()->object('ProfilePhoto/' . $name . '.jpg')->delete();
+
+            $users->update([
+                ['path' => 'image', 'value' => null]
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'failed to delete profile photo',
+                'errors' => $th->getMessage()
+            ], 400);
+        }
+
+        return response()->json('delete profile photo success');
     }
 
     public function profile(Request $request)
