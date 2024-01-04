@@ -127,15 +127,34 @@ class ProjectController extends Controller
         try {
             $project_data = [];
             foreach ($documents as $document) {
-                $projects = $document->id();
+                $project_id = $document->id();
                 $project = $this->firestore->collection('projects')
-                    ->document($projects)
-                    ->snapshot()
-                    ->data();
+                    ->document($project_id)
+                    ->snapshot();
+                // ->data();
 
-                $project['id'] = $projects;
+                // dd($project);
+                $id = $project_id;
+                $project_name = $project->get('name');
+                $start_date = Carbon::parse($project->get('start_date'));
+                $deadline = Carbon::parse($project->get('deadline'));
+                $value = $project->get('value');
+                $description = $project->get('description');
+                $assignee = $project->get('assigned_to');
+                $status = $project->get('status');
+                $month = $project->get('deadline_month');
 
-                array_push($project_data, $project);
+                $project_data[] = [
+                    'id' => $id,
+                    'project_name' => $project_name,
+                    'start_date' => $start_date->format('j F Y'),
+                    'deadline' => $deadline->format('j F Y'),
+                    'value' => $value,
+                    'description' => $description,
+                    'assignee' => $assignee,
+                    'status' => $status,
+                    'month' => $month
+                ];
             }
         } catch (\Throwable $th) {
             return response()->json([
