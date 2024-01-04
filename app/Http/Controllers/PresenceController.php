@@ -255,11 +255,14 @@ class PresenceController extends Controller
             $presence_percent = $presence_day / 26 * 100;
             $absent_percent = 100 - $presence_percent;
 
-            $on_time_percent = $presence_history->where('status', '==', 'Tepat Waktu')
+            $on_time_day = $presence_history->where('status', '==', 'Tepat Waktu')
                 ->count();
 
-            $late_percent = $presence_history->where('status', '==', 'Terlambat')
+            $late_day = $presence_history->where('status', '==', 'Terlambat')
                 ->count();
+
+            $on_time_percent = $on_time_day / ($on_time_day + $late_day) * 100;
+            $late_percent = $late_day / ($on_time_day + $late_day) * 100;
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'fetch data from database failed',
@@ -271,7 +274,7 @@ class PresenceController extends Controller
             'name' => $name,
             'position' => $position,
             'presence_percent' => $presence_percent,
-            'absent_percent=' => $absent_percent,
+            'absent_percent' => $absent_percent,
             'on_time_percent' => $on_time_percent,
             'late_percent' => $late_percent,
         ]);
