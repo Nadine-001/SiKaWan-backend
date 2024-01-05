@@ -208,14 +208,19 @@ class PresenceController extends Controller
                 $day_date = $created_date->format('l, j F Y');
 
                 $entry_time = Carbon::parse($document->get('entry_time'));
-                $exit_time = Carbon::parse($document->get('exit_time'));
+
+                if ($document->get('exit_time')) {;
+                    $exit_time = Carbon::parse($document->get('exit_time'))->format('H:i:s A');
+                } else {
+                    $exit_time = $document->get('exit_time');
+                }
 
                 $status = $document->get('status');
 
                 $history_list[] = [
                     'day_date' => $day_date,
                     'entry_time' => $entry_time->format('H:i:s A'),
-                    'exit_time' => $exit_time->format('H:i:s A'),
+                    'exit_time' => $exit_time,
                     'status' => $status,
                 ];
             }
