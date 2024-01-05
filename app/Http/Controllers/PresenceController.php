@@ -92,7 +92,9 @@ class PresenceController extends Controller
             ], 400);
         }
 
-        return response()->json('success add entry time');
+        return response()->json([
+            'button_state' => true
+        ]);
     }
 
     public function exit(Request $request)
@@ -149,7 +151,9 @@ class PresenceController extends Controller
             ], 400);
         }
 
-        return response()->json('success add exit time');
+        return response()->json([
+            'button_state' => false
+        ]);
     }
 
     public function door_access(Request $request, $id_card)
