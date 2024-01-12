@@ -242,8 +242,8 @@ class ProjectController extends Controller
             $project = $this->firestore->collection('projects')->document($project_id);
 
             $project_name = $request->name;
-            $start_date = new Timestamp(new \DateTime($request->start_date));
-            $deadline = new Timestamp(new \DateTime($request->deadline));
+            $start_date = new Timestamp(new \DateTime($request->start_date_admin));
+            $deadline = new Timestamp(new \DateTime($request->deadline_admin));
             $month = intval(Carbon::parse($deadline)->format('n'));
             $value = intval($request->value);
             $description = $request->description;
