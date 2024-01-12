@@ -95,7 +95,7 @@ class ProjectController extends Controller
                 'start_date' => $start_date,
                 'deadline' => $deadline,
                 'deadline_month' => $month,
-                'value' => $request->value,
+                'value' => intval($request->value),
                 'description' => $request->description,
                 'assigned_to' => $assigned_to,
                 'status' => 'On Going',
