@@ -225,6 +225,7 @@ class ProjectController extends Controller
             'id' => $id,
             'start_date' => $start_date->format('j F Y'),
             'deadline' => $deadline->format('j F Y'),
+            'deadline_admin' => $deadline->format('Y-m-d'),
             'value' => $value,
             'bonus' => $bonus,
             'description' => $description,
