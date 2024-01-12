@@ -181,6 +181,7 @@ class ProjectController extends Controller
             $value = $project->get('value');
             $description = $project->get('description');
             $bonus = $value * 5 / 100;
+            $status = $project->get('status');
             $assignee = $project->get('assigned_to');
 
             for ($i = 0; $i < count($assignee); $i++) {
@@ -230,6 +231,7 @@ class ProjectController extends Controller
             'value' => $value,
             'bonus' => $bonus,
             'description' => $description,
+            'status' => $status,
             'assignee' => $assignee,
         ]);
     }
