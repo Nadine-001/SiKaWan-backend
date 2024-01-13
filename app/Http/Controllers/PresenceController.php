@@ -336,19 +336,34 @@ class PresenceController extends Controller
             $presence_history = $this->firestore->collection('presence_history')
                 ->where('uid', '==', $uid);
 
-            $presence_day = $presence_history->count();
-
-            $presence_percent = $presence_day / 26 * 100;
-            $absent_percent = 100 - $presence_percent;
-
-            $on_time_day = $presence_history->where('status', '==', 'Tepat Waktu')
+            $presence_day = $presence_history->where('month', '==', intval(date('n')))
+                ->where('year', '==', intval(date('Y')))
                 ->count();
 
-            $late_day = $presence_history->where('status', '==', 'Terlambat')
-                ->count();
+            if ($presence_day) {
+                $presence_percent = $presence_day / $presence_day * 100;
+                $absent_percent = 100 - $presence_percent;
 
-            $on_time_percent = $on_time_day / ($on_time_day + $late_day) * 100;
-            $late_percent = $late_day / ($on_time_day + $late_day) * 100;
+                $on_time_day = $presence_history->where('status', '==', 'Tepat Waktu')
+                    ->where('month', '==', intval(date('n')))
+                    ->where('year', '==', intval(date('Y')))
+                    ->count();
+
+
+                $late_day = $presence_history->where('status', '==', 'Terlambat')
+                    ->where('month', '==', intval(date('n')))
+                    ->where('year', '==', intval(date('Y')))
+                    ->count();
+
+
+                $on_time_percent = $on_time_day / ($on_time_day + $late_day) * 100;
+                $late_percent = $late_day / ($on_time_day + $late_day) * 100;
+            } else {
+                $presence_percent = 0;
+                $absent_percent = 0;
+                $on_time_percent = 0;
+                $late_percent = 0;
+            }
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'fetch data from database failed',
