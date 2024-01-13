@@ -80,6 +80,7 @@ class PresenceController extends Controller
                 'entry_time' => $entry_time,
                 'exit_time' => null,
                 'entry_note' => $request->entry_note,
+                'exit_note' => null,
                 'entry_location' => $entry_location,
                 'exit_location' => null,
                 'status' => $request->status,
@@ -158,20 +159,96 @@ class PresenceController extends Controller
 
     public function door_access(Request $request, $id_card)
     {
-        try {
-            $id_card = intval($request->id_card);
-            $users = $this->firestore->collection('users')->where('id_card', '==', $id_card);
+        $work_time = strtotime("10:00");
+        $exit_time_should_be = strtotime("18:00");
+        $timestamp = strtotime($request->timestamp);
 
+        $id_card = intval($id_card);
+        $users = $this->firestore->collection('users')->where('id_card', '==', $id_card);
+
+        if ($users->count()) {
             $documents = $users->documents();
 
             foreach ($documents as $document) {
+                $uid = $document->id();
                 $name = $document->get('name');
             }
 
-            return response()->json('Access confirmed. Hello, ' . $name . '!');
-        } catch (\Throwable $th) {
-            return response()->json('Access denied. ID Card not found.', 404);
+            $date = intval(date('j', $timestamp));
+            $month = intval(date('n', $timestamp));
+            $year = intval(date('Y', $timestamp));
+
+            $presence_history = $this->firestore->collection('presence_history')
+                ->where('uid', '==', $uid)
+                ->where('date', '==', $date)
+                ->where('month', '==', $month)
+                ->where('year', '==', $year);
+
+            $documents = $presence_history->documents();
+
+            foreach ($documents as $document) {
+                $exit_time_should_be = Carbon::parse($document->get('exit_time_should_be'))->format('H:i:s');
+            }
+
+            // return response()->json($presence_history->count());
+            if (!$presence_history->count()) {
+                $day = date('l', $timestamp);
+                $latitude = -7.0968667;
+                $longitude = 110.3897417;
+
+                $entry_time = new \DateTime($request->timestamp);
+                $entry_location = new GeoPoint($latitude, $longitude);
+
+                $status = "Tepat Waktu";
+                if (strtotime(date("H:i", $timestamp)) > $work_time) {
+                    $status = "Terlambat";
+
+                    $minutes = date("i", $timestamp);
+                    $exit_time_should_be = strtotime("+$minutes minutes", $exit_time_should_be);
+                }
+
+                $entry = $this->firestore->collection('presence_history')->document($name . '-' . date("jnY", $timestamp));
+
+                $entry->set([
+                    'uid' => $uid,
+                    'name' => $name,
+                    'day' => $day,
+                    'date' => $date,
+                    'month' => $month,
+                    'year' => $year,
+                    'entry_time' => $entry_time,
+                    'exit_time' => null,
+                    'entry_note' => null,
+                    'exit_note' => null,
+                    'entry_location' => $entry_location,
+                    'exit_location' => null,
+                    'status' => $status,
+                    'exit_time_should_be' => new Timestamp(new \DateTime(date("j-n-Y", $timestamp) . ' ' . date("H:i", $exit_time_should_be)))
+                ]);
+            } else if (strtotime(date("H:i", $timestamp)) >= strtotime($exit_time_should_be)) {
+                $latitude = -7.0968667;
+                $longitude = 110.3897417;
+
+                $exit_time = new \DateTime($request->timestamp);
+                $exit_location = new GeoPoint($latitude, $longitude);
+
+                $exit = $this->firestore->collection('presence_history')->document($name . '-' . $date . $month . $year);
+
+                $exit->update([
+                    ['path' => 'exit_time', 'value' => $exit_time],
+                    ['path' => 'exit_note', 'value' => null],
+                    ['path' => 'exit_location', 'value' => $exit_location],
+                ]);
+
+                return response()->json('Sampai jumpa besok, ' . $name . '!');
+            } else {
+                return response()->json('Silakan masuk, ' . $name);
+            }
+        } else {
+            return response()->json('Akses ditolak. ID Kartu tidak ditemukan.', 404);
         }
+
+        return response()->json('Selamat datang, ' . $name . '! Jam pulang Anda : ' . date("H:i", $exit_time_should_be));
     }
 
     public function history(Request $request)
@@ -210,16 +287,16 @@ class PresenceController extends Controller
                 $entry_time = Carbon::parse($document->get('entry_time'));
 
                 if ($document->get('exit_time')) {;
-                    $exit_time = Carbon::parse($document->get('exit_time'))->format('H:i:s A');
+                    $exit_time = Carbon::parse($document->get('exit_time'))->format('H:i:s');
                 } else {
-                    $exit_time = $document->get('exit_time');
+                    $exit_time = '';
                 }
 
                 $status = $document->get('status');
 
                 $history_list[] = [
                     'day_date' => $day_date,
-                    'entry_time' => $entry_time->format('H:i:s A'),
+                    'entry_time' => $entry_time->format('H:i:s'),
                     'exit_time' => $exit_time,
                     'status' => $status,
                 ];

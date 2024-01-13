@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/sign_up', [AuthController::class, 'sign_up']); //Sign Up
 Route::post('/login', [AuthController::class, 'login']); //Login
 Route::post('/forgot_password', [AuthController::class, 'forgot_password']); //Lupa Password
-Route::get('/door_access/{id_card}', [PresenceController::class, 'door_access']); //Buka Pintu
+Route::post('/door_access/{id_card}', [PresenceController::class, 'door_access']); //Absen Masuk, Buka Pintu, dan Absen Keluar
 
 // ADMIN
 Route::post('/sign_up_admin', [AdminController::class, 'sign_up']); //Sign Up Admin
