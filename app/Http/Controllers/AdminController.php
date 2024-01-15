@@ -68,7 +68,6 @@ class AdminController extends Controller
         return response()->json([
             'name' => $name,
             'email' => $email,
-            // 'token' => $token,
             'UID' => $uid,
         ]);
     }

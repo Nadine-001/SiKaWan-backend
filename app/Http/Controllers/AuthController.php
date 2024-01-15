@@ -70,7 +70,6 @@ class AuthController extends Controller
         return response()->json([
             'name' => $name,
             'email' => $email,
-            // 'token' => $token,
             'UID' => $uid,
         ]);
     }
@@ -122,8 +121,6 @@ class AuthController extends Controller
 
             $name = $users->snapshot()->get('name');
             $file = $name . '.jpg';
-
-            // $extension = $image->getClientOriginalExtension();
 
             $image->move($localfolder, $file);
             $uploadedfile = fopen($localfolder . $file, 'r');

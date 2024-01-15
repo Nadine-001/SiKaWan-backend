@@ -52,12 +52,6 @@ class PresenceController extends Controller
                 ->snapshot()
                 ->get('name');
 
-            // if (!$name->exists()) {
-            //     return response()->json([
-            //         'message' => 'user not found',
-            //     ], 404);
-            // }
-
             $date = $request->date;
             $month = $request->month;
             $year = $request->year;
@@ -120,12 +114,6 @@ class PresenceController extends Controller
                 ->document($uid)
                 ->snapshot()
                 ->get('name');
-
-            // if (!$name->exists()) {
-            //     return response()->json([
-            //         'message' => 'user not found',
-            //     ], 404);
-            // }
 
             $date = $request->date;
             $month = $request->month;
@@ -190,7 +178,6 @@ class PresenceController extends Controller
                 $exit_time_should_be = Carbon::parse($document->get('exit_time_should_be'))->format('H:i:s');
             }
 
-            // return response()->json($presence_history->count());
             if (!$presence_history->count()) {
                 $day = date('l', $timestamp);
                 $latitude = -7.0968667;
@@ -341,9 +328,6 @@ class PresenceController extends Controller
                 ->count();
 
             if ($presence_day) {
-                $presence_percent = $presence_day / $presence_day * 100;
-                $absent_percent = 100 - $presence_percent;
-
                 $on_time_day = $presence_history->where('status', '==', 'Tepat Waktu')
                     ->where('month', '==', intval(date('n')))
                     ->where('year', '==', intval(date('Y')))
@@ -359,8 +343,6 @@ class PresenceController extends Controller
                 $on_time_percent = $on_time_day / ($on_time_day + $late_day) * 100;
                 $late_percent = $late_day / ($on_time_day + $late_day) * 100;
             } else {
-                $presence_percent = 0;
-                $absent_percent = 0;
                 $on_time_percent = 0;
                 $late_percent = 0;
             }
@@ -374,8 +356,6 @@ class PresenceController extends Controller
         return response()->json([
             'name' => $name,
             'position' => $position,
-            'presence_percent' => $presence_percent,
-            'absent_percent' => $absent_percent,
             'on_time_percent' => $on_time_percent,
             'late_percent' => $late_percent,
         ]);

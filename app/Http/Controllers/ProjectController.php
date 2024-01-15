@@ -49,7 +49,6 @@ class ProjectController extends Controller
             $month = intval(Carbon::parse($deadline)->format('n'));
 
             $names = explode(',', $request->assigned_to);
-            // $assigned_to = FieldValue::arrayUnion($names);
 
             $assigned_to = [];
             foreach ($names as $name) {
@@ -66,23 +65,6 @@ class ProjectController extends Controller
                     'position' => $position,
                 ];
             }
-
-            // $names = explode(',', $request->assigned_to);
-
-            // $uids = [];
-            // for ($i = 0; $i < count($names); $i++) {
-            //     $name = $this->firestore->collection('users')
-            //         ->where('name', '==', $names[$i]);
-
-            //     $documents = $name->documents();
-
-            //     foreach ($documents as $document) {
-            //         $uid = $document->id();
-            //         array_push($uids, $uid);
-            //     }
-            // }
-
-            // $assigned_to = FieldValue::arrayUnion($uids);
 
             $start_id = Carbon::parse($start_date)->format('dmy');
             $end_id = Carbon::parse($deadline)->format('dmy');
@@ -131,9 +113,7 @@ class ProjectController extends Controller
                 $project = $this->firestore->collection('projects')
                     ->document($project_id)
                     ->snapshot();
-                // ->data();
 
-                // dd($project);
                 $id = $project_id;
                 $project_name = $project->get('name');
                 $start_date = Carbon::parse($project->get('start_date'));
@@ -171,7 +151,6 @@ class ProjectController extends Controller
         $project = $this->firestore->collection('projects')
             ->document($project_id)
             ->snapshot();
-        // ->data();
 
         try {
             $project_name = $project->get('name');
@@ -195,25 +174,6 @@ class ProjectController extends Controller
                 }
             }
 
-            // foreach ($assignee as $name ) {
-            //     $expiresAt = new \DateTime('tomorrow');
-
-            //     $imageReference = app('firebase.storage')->getBucket()->object('ProfilePhoto/' . $name . '.jpg');
-            //     if ($imageReference->exists())
-            //         $image = $imageReference->signedUrl($expiresAt);
-            // }
-
-            // for ($i = 0; $i < count($project['assigned_to']); $i++) {
-            //     $names = $project['assigned_to'][$i];
-
-            //     $user = $this->firestore->collection('users')
-            //         ->document($names)
-            //         ->snapshot()
-            //         ->data();
-
-            //     $name = ['name' => $user['name'], 'position' => $user['position']];
-            //     array_push($assignee, $name);
-            // }
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'fetch data from database failed',
@@ -249,7 +209,6 @@ class ProjectController extends Controller
             $description = $request->description;
             $status = $request->status;
             $names = explode(',', $request->assigned_to);
-            // $assigned_to = FieldValue::arrayUnion($names);
 
             $assigned_to = [];
             foreach ($names as $name) {
