@@ -190,8 +190,10 @@ class PresenceController extends Controller
                 if (strtotime(date("H:i", $timestamp)) > $work_time) {
                     $status = "Terlambat";
 
-                    $minutes = date("i", $timestamp);
-                    $exit_time_should_be = strtotime("+$minutes minutes", $exit_time_should_be);
+                    $late_time = strtotime(date("H:i", $timestamp)) - $work_time;
+
+                    // Menambahkan selisih waktu terlambat ke waktu keluar seharusnya
+                    $exit_time_should_be = strtotime("+{$late_time} seconds", $exit_time_should_be);
                 }
 
                 $entry = $this->firestore->collection('presence_history')->document($name . '-' . date("jnY", $timestamp));
