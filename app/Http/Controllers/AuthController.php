@@ -30,6 +30,7 @@ class AuthController extends Controller
             'name' => 'required',
             'email' => 'required',
             'position' => 'required',
+            'division' => 'required',
             'password' => 'required',
         ]);
 
@@ -40,6 +41,8 @@ class AuthController extends Controller
         $name = $request->name;
         $email = $request->email;
         $password = $request->password;
+        $position = $request->position;
+        $division = $request->division;
 
         try {
             $new_user = $this->auth->createUserWithEmailAndPassword($email, $password);
@@ -58,7 +61,8 @@ class AuthController extends Controller
                 'id_card' => null,
                 'name' => $name,
                 'email' => $email,
-                'position' => $request->position,
+                'position' => $position,
+                'division' => $division,
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -216,6 +220,7 @@ class AuthController extends Controller
             $email = $user->get('email');
             $name = $user->get('name');
             $position = $user->get('position');
+            $division = $user->get('division');
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'failed to get user data',
@@ -228,6 +233,7 @@ class AuthController extends Controller
             'email' => $email,
             'name' => $name,
             'position' => $position,
+            'division' => $division,
         ]);
     }
 
