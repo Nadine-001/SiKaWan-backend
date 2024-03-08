@@ -27,6 +27,39 @@ class PresenceController extends Controller
             ->database();
     }
 
+    public function work_time(Request $request)
+    {
+        $uid = $this->getUid($request);
+
+        try {
+            $user = $this->firestore->collection('users')
+                ->document($uid)
+                ->snapshot();
+
+            if (!$user->exists()) {
+                return response()->json([
+                    'message' => 'user not found',
+                ], 404);
+            }
+
+            $division = $user->get('division');
+
+            $work_time = '10:00 AM - 06:00 PM';
+            if ($division == 'Food and Beverage') {
+                $work_time = '11:00 AM - 10:00 PM';
+            }
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'insert data to database failed',
+                'errors' => $th->getMessage()
+            ], 400);
+        }
+
+        return response()->json([
+            'work_time' => $work_time
+        ]);
+    }
+
     public function entry(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -37,7 +70,6 @@ class PresenceController extends Controller
             'time' => 'required',
             'latitude' => 'required',
             'longitude' => 'required',
-            'status' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -47,10 +79,12 @@ class PresenceController extends Controller
         $uid = $this->getUid($request);
 
         try {
-            $name = $this->firestore->collection('users')
+            $user = $this->firestore->collection('users')
                 ->document($uid)
-                ->snapshot()
-                ->get('name');
+                ->snapshot();
+
+            $name = $user->get('name');
+            $division = $user->get('division');
 
             $date = $request->date;
             $month = $request->month;
@@ -61,6 +95,19 @@ class PresenceController extends Controller
 
             $entry_time = new Timestamp(new \DateTime($date . '-' . $month . '-' . $year . ' ' . $time));
             $entry_location = new GeoPoint($latitude, $longitude);
+
+            $status = 'Tepat Waktu';
+            if ($division == 'Food & Beverage') {
+                if (strtotime($time) > strtotime("11:00")) {
+                    $status = 'Terlambat';
+                }
+            } else if ($division == 'Technology Service') {
+                if (strtotime($time) > strtotime("10:00")) {
+                    $status = 'Terlambat';
+                }
+            } else {
+                $status = 'Unknown';
+            }
 
             $entry = $this->firestore->collection('presence_history')->document($name . '-' . $date . $month . $year);
 
@@ -77,7 +124,7 @@ class PresenceController extends Controller
                 'exit_note' => null,
                 'entry_location' => $entry_location,
                 'exit_location' => null,
-                'status' => $request->status,
+                'status' => $status,
                 'button_state' => true
             ]);
         } catch (\Throwable $th) {
@@ -191,8 +238,6 @@ class PresenceController extends Controller
                     $status = "Terlambat";
 
                     $late_time = strtotime(date("H:i", $timestamp)) - $work_time;
-
-                    // Menambahkan selisih waktu terlambat ke waktu keluar seharusnya
                     $exit_time_should_be = strtotime("+{$late_time} seconds", $exit_time_should_be);
                 }
 
