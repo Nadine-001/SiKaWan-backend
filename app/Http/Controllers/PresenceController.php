@@ -44,9 +44,9 @@ class PresenceController extends Controller
 
             $division = $user->get('division');
 
-            $work_time = '10:00 AM - 06:00 PM';
+            $work_time = '10:00 - 18:00';
             if ($division == 'Food and Beverage') {
-                $work_time = '11:00 AM - 10:00 PM';
+                $work_time = '11:00 - 22:00';
             }
         } catch (\Throwable $th) {
             return response()->json([
@@ -316,7 +316,9 @@ class PresenceController extends Controller
                     $document->get('date')
                 );
 
-                $day_date = $created_date->format('l, j F Y');
+                $format_date = Carbon::parse($created_date);
+                $format_date->locale('id');
+                $day_date = $format_date->isoFormat('dddd, D MMMM YYYY');
 
                 $entry_time = Carbon::parse($document->get('entry_time'));
 
@@ -329,12 +331,15 @@ class PresenceController extends Controller
                 $status = $document->get('status');
 
                 $history_list[] = [
+                    'created_date' => $created_date->format('Y-m-d'),
                     'day_date' => $day_date,
                     'entry_time' => $entry_time->format('H:i:s'),
                     'exit_time' => $exit_time,
                     'status' => $status,
                 ];
             }
+
+            usort($history_list, [$this, "compareDates"]);
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'fetch data from database failed',
@@ -347,6 +352,11 @@ class PresenceController extends Controller
             'position' => $position,
             'history_list' => $history_list,
         ]);
+    }
+
+    private function compareDates($a, $b)
+    {
+        return strtotime($b['created_date']) - strtotime($a['created_date']);
     }
 
     public function statistic(Request $request)
