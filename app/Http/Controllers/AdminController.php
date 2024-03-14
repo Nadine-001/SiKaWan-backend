@@ -10,7 +10,7 @@ use Kreait\Laravel\Firebase\Facades\Firebase;
 
 class AdminController extends Controller
 {
-    protected $auth, $rtdb, $firestore;
+    protected $auth, $rtdb, $firestore, $googleMaps;
     public function __construct()
     {
         $this->auth = Firebase::auth();
@@ -180,22 +180,56 @@ class AdminController extends Controller
         $documents =  $presence_history->documents();
 
         try {
+            $GOOGLE_API_KEY = 'AIzaSyCq5KQ9guAzQHQGUq0wfGJqt3ud2ZBgzNo';
+
             $presence_list = [];
             foreach ($documents as $document) {
-                $name = $document->get('name');
-                $date = Carbon::parse($document->get('entry_time'));
-                $entry_time = Carbon::parse($document->get('entry_time'));
-                $exit_time = Carbon::parse($document->get('exit_time'));
-                $status = $document->get('status');
+                $date_now = Carbon::parse(date(now()));
+                $date_now->locale('id');
+                $date_now = $date_now->isoFormat('D');
 
-                $presence_list[] = [
-                    'name' => $name,
-                    'date' => $date->format('j F Y'),
-                    'entry_time' => $entry_time->format('H:i:s A'),
-                    'exit_time' => $exit_time->format('H:i:s A'),
-                    'status' => $status,
-                ];
+                // $date = Carbon::parse($document->get('entry_time'))->format('Y-m-d');
+                // dd($date);
+
+                $this_date = Carbon::parse($document->get('entry_time'));
+                $this_date->locale('id');
+                $now_date = $this_date->isoFormat('D');
+
+                if ($now_date != $date_now) {
+                    $name = $document->get('name');
+
+                    $entry_time = Carbon::parse($document->get('entry_time'));
+                    $exit_time = $document->get('exit_time');
+
+                    if ($exit_time == null) {
+                        $exit_time = "-";
+                    } else {
+                        $exit_time = Carbon::parse($document->get('exit_time'))->format('H:i:s A');
+                    }
+
+                    $status = $document->get('status');
+
+                    $entry_location = $document->get('entry_location');
+                    $longitude = $entry_location->longitude();
+                    $latitude = $entry_location->latitude();
+                    $formatted_latlng = trim($latitude) . ',' . trim($longitude);
+                    $geocodeFromLatLng = file_get_contents("https://maps.googleapis.com/maps/api/geocode/json?latlng={$formatted_latlng}&key={$GOOGLE_API_KEY}");
+                    $apiResponse = json_decode($geocodeFromLatLng);
+                    $location = $apiResponse->results[1]->formatted_address;
+
+                    $presence_list[] = [
+                        'sort_date' => $this_date->format('Y-m-d'),
+                        'name' => $name,
+                        'date' => $this_date->isoFormat('D MMMM YYYY'),
+                        'entry_time' => $entry_time->format('H:i:s A'),
+                        'exit_time' => $exit_time,
+                        'location' => $location,
+                        'status' => $status,
+                    ];
+                }
             }
+
+            usort($presence_list, [$this, "compareDates"]);
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'fetch data from database failed',
@@ -204,6 +238,11 @@ class AdminController extends Controller
         }
 
         return response()->json($presence_list);
+    }
+
+    private function compareDates($a, $b)
+    {
+        return strtotime($b['sort_date']) - strtotime($a['sort_date']);
     }
 
     public function getUid(Request $request)
