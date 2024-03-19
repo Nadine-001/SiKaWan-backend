@@ -97,6 +97,7 @@ class AuthController extends Controller
 
             $uid = $user->firebaseUserId();
             $token = $user->idToken();
+            $refresh_token = $user->refreshToken();
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'login failed',
@@ -108,6 +109,7 @@ class AuthController extends Controller
             'email' => $email,
             'UID' => $uid,
             'token' => $token,
+            'refresh_token' => $refresh_token,
         ]);
     }
 
@@ -237,38 +239,38 @@ class AuthController extends Controller
         ]);
     }
 
-    public function division(Request $request)
-    {
-        $uid = $this->getUid($request);
+    // public function division(Request $request)
+    // {
+    //     $uid = $this->getUid($request);
 
-        try {
-            $user = $this->firestore->collection('users')
-                ->document($uid)
-                ->snapshot();
+    //     try {
+    //         $user = $this->firestore->collection('users')
+    //             ->document($uid)
+    //             ->snapshot();
 
-            if (!$user->exists()) {
-                return response()->json([
-                    'message' => 'user not found',
-                ], 404);
-            }
+    //         if (!$user->exists()) {
+    //             return response()->json([
+    //                 'message' => 'user not found',
+    //             ], 404);
+    //         }
 
-            $division_name = $user->get('division');
+    //         $division_name = $user->get('division');
 
-            $division = true;
-            if ($division_name == 'Food $ Beverage') {
-                $division = false;
-            }
-        } catch (\Throwable $th) {
-            return response()->json([
-                'message' => 'failed to get user data',
-                'errors' => $th->getMessage()
-            ], 400);
-        }
+    //         $division = true;
+    //         if ($division_name == 'Food and Beverage') {
+    //             $division = false;
+    //         }
+    //     } catch (\Throwable $th) {
+    //         return response()->json([
+    //             'message' => 'failed to get user data',
+    //             'errors' => $th->getMessage()
+    //         ], 400);
+    //     }
 
-        return response()->json([
-            'division' => $division,
-        ]);
-    }
+    //     return response()->json([
+    //         'division' => $division,
+    //     ]);
+    // }
 
     public function logout(Request $request)
     {

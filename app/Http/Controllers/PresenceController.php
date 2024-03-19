@@ -97,7 +97,7 @@ class PresenceController extends Controller
             $entry_location = new GeoPoint($latitude, $longitude);
 
             $status = 'Tepat Waktu';
-            if ($division == 'Food & Beverage') {
+            if ($division == 'Food and Beverage') {
                 if (strtotime($time) > strtotime("11:00")) {
                     $status = 'Terlambat';
                 }
@@ -120,8 +120,8 @@ class PresenceController extends Controller
                 'year' => $year,
                 'entry_time' => $entry_time,
                 'exit_time' => null,
-                'entry_note' => $request->entry_note,
-                'exit_note' => null,
+                // 'entry_note' => $request->entry_,
+                // 'exit_note' => null,
                 'entry_location' => $entry_location,
                 'exit_location' => null,
                 'status' => $status,
@@ -176,7 +176,7 @@ class PresenceController extends Controller
 
             $exit->update([
                 ['path' => 'exit_time', 'value' => $exit_time],
-                ['path' => 'exit_note', 'value' => $request->exit_note],
+                // ['path' => 'exit_note', 'value' => $request->exit_note],
                 ['path' => 'exit_location', 'value' => $exit_location],
                 ['path' => 'button_state', 'value' => false]
             ]);
@@ -252,8 +252,8 @@ class PresenceController extends Controller
                     'year' => $year,
                     'entry_time' => $entry_time,
                     'exit_time' => null,
-                    'entry_note' => null,
-                    'exit_note' => null,
+                    // 'entry_note' => null,
+                    // 'exit_note' => null,
                     'entry_location' => $entry_location,
                     'exit_location' => null,
                     'status' => $status,
@@ -270,7 +270,7 @@ class PresenceController extends Controller
 
                 $exit->update([
                     ['path' => 'exit_time', 'value' => $exit_time],
-                    ['path' => 'exit_note', 'value' => null],
+                    // ['path' => 'exit_note', 'value' => null],
                     ['path' => 'exit_location', 'value' => $exit_location],
                 ]);
 
