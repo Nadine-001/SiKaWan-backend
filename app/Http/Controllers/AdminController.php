@@ -180,22 +180,22 @@ class AdminController extends Controller
         $documents =  $presence_history->documents();
 
         try {
-            $GOOGLE_API_KEY = 'AIzaSyCq5KQ9guAzQHQGUq0wfGJqt3ud2ZBgzNo';
+            // $GOOGLE_API_KEY = 'AIzaSyCq5KQ9guAzQHQGUq0wfGJqt3ud2ZBgzNo';
 
             $presence_list = [];
             foreach ($documents as $document) {
-                $date_now = Carbon::parse(date(now()));
-                $date_now->locale('id');
-                $date_now = $date_now->isoFormat('D');
+                // $date_now = Carbon::parse(date(now()));
+                // $date_now->locale('id');
+                // $date_now = $date_now->isoFormat('D');
 
                 // $date = Carbon::parse($document->get('entry_time'))->format('Y-m-d');
                 // dd($date);
 
                 $this_date = Carbon::parse($document->get('entry_time'));
                 $this_date->locale('id');
-                $now_date = $this_date->isoFormat('D');
+                // $now_date = $this_date->isoFormat('D');
 
-                if ($now_date != $date_now) {
+                // if ($now_date != $date_now) {
                     $name = $document->get('name');
 
                     $entry_time = Carbon::parse($document->get('entry_time'));
@@ -209,13 +209,13 @@ class AdminController extends Controller
 
                     $status = $document->get('status');
 
-                    $entry_location = $document->get('entry_location');
-                    $longitude = $entry_location->longitude();
-                    $latitude = $entry_location->latitude();
-                    $formatted_latlng = trim($latitude) . ',' . trim($longitude);
-                    $geocodeFromLatLng = file_get_contents("https://maps.googleapis.com/maps/api/geocode/json?latlng={$formatted_latlng}&key={$GOOGLE_API_KEY}");
-                    $apiResponse = json_decode($geocodeFromLatLng);
-                    $location = $apiResponse->results[1]->formatted_address;
+                    // $entry_location = $document->get('entry_location');
+                    // $longitude = $entry_location->longitude();
+                    // $latitude = $entry_location->latitude();
+                    // $formatted_latlng = trim($latitude) . ',' . trim($longitude);
+                    // $geocodeFromLatLng = file_get_contents("https://maps.googleapis.com/maps/api/geocode/json?latlng={$formatted_latlng}&key={$GOOGLE_API_KEY}");
+                    // $apiResponse = json_decode($geocodeFromLatLng);
+                    // $location = $apiResponse->results[1]->formatted_address;
 
                     $presence_list[] = [
                         'sort_date' => $this_date->format('Y-m-d'),
@@ -223,10 +223,10 @@ class AdminController extends Controller
                         'date' => $this_date->isoFormat('D MMMM YYYY'),
                         'entry_time' => $entry_time->format('H:i:s A'),
                         'exit_time' => $exit_time,
-                        'location' => $location,
+                        // 'location' => $location,
                         'status' => $status,
                     ];
-                }
+                // }
             }
 
             usort($presence_list, [$this, "compareDates"]);
