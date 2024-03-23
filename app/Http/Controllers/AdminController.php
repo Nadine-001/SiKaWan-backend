@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use Google\Cloud\Core\Timestamp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Kreait\Firebase\Factory;
@@ -196,36 +197,36 @@ class AdminController extends Controller
                 // $now_date = $this_date->isoFormat('D');
 
                 // if ($now_date != $date_now) {
-                    $name = $document->get('name');
+                $name = $document->get('name');
 
-                    $entry_time = Carbon::parse($document->get('entry_time'));
-                    $exit_time = $document->get('exit_time');
+                $entry_time = Carbon::parse($document->get('entry_time'));
+                $exit_time = $document->get('exit_time');
 
-                    if ($exit_time == null) {
-                        $exit_time = "-";
-                    } else {
-                        $exit_time = Carbon::parse($document->get('exit_time'))->format('H:i:s A');
-                    }
+                if ($exit_time == null) {
+                    $exit_time = "-";
+                } else {
+                    $exit_time = Carbon::parse($document->get('exit_time'))->format('H:i:s A');
+                }
 
-                    $status = $document->get('status');
+                $status = $document->get('status');
 
-                    // $entry_location = $document->get('entry_location');
-                    // $longitude = $entry_location->longitude();
-                    // $latitude = $entry_location->latitude();
-                    // $formatted_latlng = trim($latitude) . ',' . trim($longitude);
-                    // $geocodeFromLatLng = file_get_contents("https://maps.googleapis.com/maps/api/geocode/json?latlng={$formatted_latlng}&key={$GOOGLE_API_KEY}");
-                    // $apiResponse = json_decode($geocodeFromLatLng);
-                    // $location = $apiResponse->results[1]->formatted_address;
+                // $entry_location = $document->get('entry_location');
+                // $longitude = $entry_location->longitude();
+                // $latitude = $entry_location->latitude();
+                // $formatted_latlng = trim($latitude) . ',' . trim($longitude);
+                // $geocodeFromLatLng = file_get_contents("https://maps.googleapis.com/maps/api/geocode/json?latlng={$formatted_latlng}&key={$GOOGLE_API_KEY}");
+                // $apiResponse = json_decode($geocodeFromLatLng);
+                // $location = $apiResponse->results[1]->formatted_address;
 
-                    $presence_list[] = [
-                        'sort_date' => $this_date->format('Y-m-d'),
-                        'name' => $name,
-                        'date' => $this_date->isoFormat('D MMMM YYYY'),
-                        'entry_time' => $entry_time->format('H:i:s A'),
-                        'exit_time' => $exit_time,
-                        // 'location' => $location,
-                        'status' => $status,
-                    ];
+                $presence_list[] = [
+                    'sort_date' => $this_date->format('Y-m-d'),
+                    'name' => $name,
+                    'date' => $this_date->isoFormat('D MMMM YYYY'),
+                    'entry_time' => $entry_time->format('H:i:s A'),
+                    'exit_time' => $exit_time,
+                    // 'location' => $location,
+                    'status' => $status,
+                ];
                 // }
             }
 
@@ -238,6 +239,66 @@ class AdminController extends Controller
         }
 
         return response()->json($presence_list);
+    }
+
+    public function full_time_add(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'entry_time' => 'required',
+            'exit_time' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        try {
+            $this->rtdb->getReference('/full_time')->update([
+                'entry_time' => $request->entry_time,
+                'exit_time' => $request->exit_time
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'add time failed',
+                'errors' => $th->getMessage()
+            ], 400);
+        }
+
+        return response()->json('success add time');
+    }
+
+    public function part_time_add(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'entry_time' => 'required',
+            'exit_time' => 'required',
+            'name' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        try {
+            $this->rtdb->getReference('/part_time')->update([
+                'entry_time' => $request->entry_time,
+                'exit_time' => $request->exit_time
+            ]);
+
+            $names = explode(',', $request->name);
+
+            $part_timer = $this->firestore->collection('part_timer')->document('names');
+            $part_timer->set([
+                'name' => $names
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'add time failed',
+                'errors' => $th->getMessage()
+            ], 400);
+        }
+
+        return response()->json('success add time');
     }
 
     private function compareDates($a, $b)

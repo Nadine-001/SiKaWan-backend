@@ -96,9 +96,23 @@ class PresenceController extends Controller
             $entry_time = new Timestamp(new \DateTime($date . '-' . $month . '-' . $year . ' ' . $time));
             $entry_location = new GeoPoint($latitude, $longitude);
 
+            $part_timer = $this->firestore->collection('part_timer')
+                ->document('names')
+                ->snapshot()
+                ->get('name');
+
+            $entry_part_time = $this->rtdb->getReference('/part_time/entry_time')->getValue();
+            $entry_full_time = $this->rtdb->getReference('/full_time/entry_time')->getValue();
+
             $status = 'Tepat Waktu';
             if ($division == 'Food and Beverage') {
-                if (strtotime($time) > strtotime("11:00")) {
+                if (in_array($name, $part_timer)) {
+                    if (strtotime($time) > strtotime($entry_part_time)) {
+                        $status = 'Terlambat';
+                    }
+                }
+
+                if (strtotime($time) > strtotime($entry_full_time)) {
                     $status = 'Terlambat';
                 }
             } else if ($division == 'Technology Service') {
