@@ -36,6 +36,7 @@ class PresenceController extends Controller
                 ->document($uid)
                 ->snapshot();
 
+
             if (!$user->exists()) {
                 return response()->json([
                     'message' => 'user not found',
@@ -44,9 +45,24 @@ class PresenceController extends Controller
 
             $division = $user->get('division');
 
+            $name = $user->get('name');
+            $part_timer = $this->firestore->collection('part_timer')
+                ->document('names')
+                ->snapshot()
+                ->get('name');
+
+            $entry_part_time = $this->rtdb->getReference('/part_time/entry_time')->getValue();
+            $exit_part_time = $this->rtdb->getReference('/part_time/exit_time')->getValue();
+            $entry_full_time = $this->rtdb->getReference('/full_time/entry_time')->getValue();
+            $exit_full_time = $this->rtdb->getReference('/full_time/exit_time')->getValue();
+
             $work_time = '10:00 - 18:00';
             if ($division == 'Food and Beverage') {
-                $work_time = '11:00 - 22:00';
+                if (in_array($name, $part_timer)) {
+                    $work_time = $entry_part_time . ' - ' . $exit_part_time;
+                } else {
+                    $work_time = $entry_full_time . ' - ' . $exit_full_time;
+                }
             }
         } catch (\Throwable $th) {
             return response()->json([
@@ -97,22 +113,20 @@ class PresenceController extends Controller
             $entry_location = new GeoPoint($latitude, $longitude);
 
             $part_timer = $this->firestore->collection('part_timer')
-                ->document('names')
+                ->document('uids')
                 ->snapshot()
-                ->get('name');
+                ->get('uid');
 
             $entry_part_time = $this->rtdb->getReference('/part_time/entry_time')->getValue();
             $entry_full_time = $this->rtdb->getReference('/full_time/entry_time')->getValue();
 
             $status = 'Tepat Waktu';
             if ($division == 'Food and Beverage') {
-                if (in_array($name, $part_timer)) {
+                if (in_array($uid, $part_timer)) {
                     if (strtotime($time) > strtotime($entry_part_time)) {
                         $status = 'Terlambat';
                     }
-                }
-
-                if (strtotime($time) > strtotime($entry_full_time)) {
+                } else if (strtotime($time) > strtotime($entry_full_time)) {
                     $status = 'Terlambat';
                 }
             } else if ($division == 'Technology Service') {
