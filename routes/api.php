@@ -32,7 +32,7 @@ Route::group(['middleware' => 'firebase'], function () {
     Route::get('/get_photo', [AuthController::class, 'get_photo']); //Menampilkan Foto Profil
     Route::delete('/delete_photo', [AuthController::class, 'delete_photo']); //Hapus Foto Profil
     Route::get('/profile', [AuthController::class, 'profile']); //Profil
-    Route::get('/division', [AuthController::class, 'division']); //Profil
+    Route::get('/division', [AuthController::class, 'division']); //Divisi
     Route::get('/logout', [AuthController::class, 'logout']); //Logout
     Route::get('/work_time', [PresenceController::class, 'work_time']); //Jam Kerja
     Route::post('/entry', [PresenceController::class, 'entry']); //Absen Masuk
