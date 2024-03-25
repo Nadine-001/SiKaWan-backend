@@ -287,9 +287,23 @@ class AdminController extends Controller
 
             $names = explode(',', $request->name);
 
-            $part_timer = $this->firestore->collection('part_timer')->document('names');
+            $uids = [];
+            foreach ($names as $name) {
+                $users = $this->firestore->collection('users')
+                    ->where('name', '=', $name)
+                    ->documents();
+
+                foreach ($users as $user) {
+                    $uid = $user->id();
+                    $uids[] = $uid;
+                }
+            }
+
+            $part_timer = $this->firestore->collection('part_timer')
+                ->document('uids');
+
             $part_timer->set([
-                'name' => $names
+                'uid' => $uids
             ]);
         } catch (\Throwable $th) {
             return response()->json([
