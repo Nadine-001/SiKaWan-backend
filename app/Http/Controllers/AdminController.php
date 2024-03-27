@@ -280,10 +280,10 @@ class AdminController extends Controller
         }
 
         try {
-            $count = $this->rtdb->getReference('/part_timee/')->getSnapshot()->numChildren();
+            $count = $this->rtdb->getReference('/part_time/')->getSnapshot()->numChildren();
             $category = chr(ord('A') + $count);
 
-            $this->rtdb->getReference('/part_timee/' . $category)->update([
+            $this->rtdb->getReference('/part_time/' . $category)->update([
                 'entry_time' => $request->entry_time,
                 'exit_time' => $request->exit_time
             ]);
@@ -331,7 +331,7 @@ class AdminController extends Controller
         }
 
         try {
-            $this->rtdb->getReference('/part_timee/' . $category)->update([
+            $this->rtdb->getReference('/part_time/' . $category)->update([
                 'entry_time' => $request->entry_time,
                 'exit_time' => $request->exit_time
             ]);
@@ -369,7 +369,7 @@ class AdminController extends Controller
     public function part_time_delete(Request $request, $category)
     {
         try {
-            $this->rtdb->getReference('/part_timee/' . $category)->remove();
+            $this->rtdb->getReference('/part_time/' . $category)->remove();
 
             $this->firestore->collection('part_timer')
                 ->document($category)
