@@ -48,6 +48,8 @@ Route::group(['middleware' => 'firebase'], function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard']); //Dashboard
         Route::post('/full_time', [AdminController::class, 'full_time_add']); //Add Full Time
         Route::post('/part_time', [AdminController::class, 'part_time_add']); //Add Part Time
+        Route::put('/part_time/{category}', [AdminController::class, 'part_time_update']); //Add Part Time
+        Route::delete('/part_time/{category}', [AdminController::class, 'part_time_delete']); //Add Part Time
         Route::post('/create_project', [ProjectController::class, 'create_project']); //Buat Proyek
         Route::put('/projects/{project_id}', [ProjectController::class, 'update_project']); //Update Proyek
         Route::delete('/projects/{project_id}', [ProjectController::class, 'delete_project']); //Hapus Proyek
