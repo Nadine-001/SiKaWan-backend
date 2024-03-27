@@ -280,7 +280,10 @@ class AdminController extends Controller
         }
 
         try {
-            $this->rtdb->getReference('/part_time')->update([
+            $count = $this->rtdb->getReference('/part_timee/')->getSnapshot()->numChildren();
+            $category = chr(ord('A') + $count);
+
+            $this->rtdb->getReference('/part_timee/' . $category)->update([
                 'entry_time' => $request->entry_time,
                 'exit_time' => $request->exit_time
             ]);
@@ -300,19 +303,85 @@ class AdminController extends Controller
             }
 
             $part_timer = $this->firestore->collection('part_timer')
-                ->document('uids');
+                ->document($category);
 
             $part_timer->set([
                 'uid' => $uids
             ]);
         } catch (\Throwable $th) {
             return response()->json([
-                'message' => 'add time failed',
+                'message' => 'add category failed',
                 'errors' => $th->getMessage()
             ], 400);
         }
 
-        return response()->json('success add time');
+        return response()->json('success add category');
+    }
+
+    public function part_time_update(Request $request, $category)
+    {
+        $validator = Validator::make($request->all(), [
+            'entry_time' => 'required',
+            'exit_time' => 'required',
+            'name' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        try {
+            $this->rtdb->getReference('/part_timee/' . $category)->update([
+                'entry_time' => $request->entry_time,
+                'exit_time' => $request->exit_time
+            ]);
+
+            $names = explode(',', $request->name);
+
+            $uids = [];
+            foreach ($names as $name) {
+                $users = $this->firestore->collection('users')
+                    ->where('name', '=', $name)
+                    ->documents();
+
+                foreach ($users as $user) {
+                    $uid = $user->id();
+                    $uids[] = $uid;
+                }
+            }
+
+            $part_timer = $this->firestore->collection('part_timer')
+                ->document($category);
+
+            $part_timer->set([
+                'uid' => $uids
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'update category failed',
+                'errors' => $th->getMessage()
+            ], 400);
+        }
+
+        return response()->json('success update category');
+    }
+
+    public function part_time_delete(Request $request, $category)
+    {
+        try {
+            $this->rtdb->getReference('/part_timee/' . $category)->remove();
+
+            $this->firestore->collection('part_timer')
+                ->document($category)
+                ->delete();
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'delete category failed',
+                'errors' => $th->getMessage()
+            ], 400);
+        }
+
+        return response()->json('success delete category');
     }
 
     private function compareDates($a, $b)
