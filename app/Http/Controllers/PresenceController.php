@@ -57,8 +57,8 @@ class PresenceController extends Controller
                 }
 
                 if ($category != null) {
-                    $entry_part_time = $this->rtdb->getReference('/part_timee/' . $category . '/entry_time')->getValue();
-                    $exit_part_time = $this->rtdb->getReference('/part_timee/' . $category . '/exit_time')->getValue();
+                    $entry_part_time = $this->rtdb->getReference('/part_time/' . $category . '/entry_time')->getValue();
+                    $exit_part_time = $this->rtdb->getReference('/part_time/' . $category . '/exit_time')->getValue();
                     $work_time = $entry_part_time . ' - ' . $exit_part_time;
                 } else {
                     $entry_full_time = $this->rtdb->getReference('/full_time/entry_time')->getValue();
@@ -127,7 +127,7 @@ class PresenceController extends Controller
                 }
 
                 if ($category != null) {
-                    $entry_part_time = $this->rtdb->getReference('/part_timee/' . $category . '/entry_time')->getValue();
+                    $entry_part_time = $this->rtdb->getReference('/part_time/' . $category . '/entry_time')->getValue();
                     if (strtotime($time) > strtotime($entry_part_time)) {
                         $status = 'Terlambat';
                     }
