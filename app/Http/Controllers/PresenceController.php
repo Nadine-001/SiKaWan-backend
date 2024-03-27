@@ -45,22 +45,25 @@ class PresenceController extends Controller
 
             $division = $user->get('division');
 
-            $name = $user->get('name');
-            $part_timer = $this->firestore->collection('part_timer')
-                ->document('names')
-                ->snapshot()
-                ->get('name');
-
-            $entry_part_time = $this->rtdb->getReference('/part_time/entry_time')->getValue();
-            $exit_part_time = $this->rtdb->getReference('/part_time/exit_time')->getValue();
-            $entry_full_time = $this->rtdb->getReference('/full_time/entry_time')->getValue();
-            $exit_full_time = $this->rtdb->getReference('/full_time/exit_time')->getValue();
-
             $work_time = '10:00 - 18:00';
             if ($division == 'Food and Beverage') {
-                if (in_array($name, $part_timer)) {
+                $part_timers = $this->firestore->collection('part_timer')
+                    ->where('uid', 'array-contains', $uid)
+                    ->documents();
+
+                $category = null;
+                foreach ($part_timers as $part_timer) {
+                    $category =  $part_timer->id();
+                }
+
+                if ($category != null) {
+                    $entry_part_time = $this->rtdb->getReference('/part_timee/' . $category . '/entry_time')->getValue();
+                    $exit_part_time = $this->rtdb->getReference('/part_timee/' . $category . '/exit_time')->getValue();
                     $work_time = $entry_part_time . ' - ' . $exit_part_time;
                 } else {
+                    $entry_full_time = $this->rtdb->getReference('/full_time/entry_time')->getValue();
+                    $exit_full_time = $this->rtdb->getReference('/full_time/exit_time')->getValue();
+
                     $work_time = $entry_full_time . ' - ' . $exit_full_time;
                 }
             }
@@ -112,22 +115,27 @@ class PresenceController extends Controller
             $entry_time = new Timestamp(new \DateTime($date . '-' . $month . '-' . $year . ' ' . $time));
             $entry_location = new GeoPoint($latitude, $longitude);
 
-            $part_timer = $this->firestore->collection('part_timer')
-                ->document('uids')
-                ->snapshot()
-                ->get('uid');
-
-            $entry_part_time = $this->rtdb->getReference('/part_time/entry_time')->getValue();
-            $entry_full_time = $this->rtdb->getReference('/full_time/entry_time')->getValue();
-
             $status = 'Tepat Waktu';
             if ($division == 'Food and Beverage') {
-                if (in_array($uid, $part_timer)) {
+                $part_timers = $this->firestore->collection('part_timer')
+                    ->where('uid', 'array-contains', $uid)
+                    ->documents();
+
+                $category = null;
+                foreach ($part_timers as $part_timer) {
+                    $category =  $part_timer->id();
+                }
+
+                if ($category != null) {
+                    $entry_part_time = $this->rtdb->getReference('/part_timee/' . $category . '/entry_time')->getValue();
                     if (strtotime($time) > strtotime($entry_part_time)) {
                         $status = 'Terlambat';
                     }
-                } else if (strtotime($time) > strtotime($entry_full_time)) {
-                    $status = 'Terlambat';
+                } else {
+                    $entry_full_time = $this->rtdb->getReference('/full_time/entry_time')->getValue();
+                    if (strtotime($time) > strtotime($entry_full_time)) {
+                        $status = 'Terlambat';
+                    }
                 }
             } else if ($division == 'Technology Service') {
                 if (strtotime($time) > strtotime("10:00")) {
