@@ -45,7 +45,10 @@ class PresenceController extends Controller
 
             $division = $user->get('division');
 
-            $work_time = '10:00 - 18:00';
+            $entry_work_time = $this->rtdb->getReference('/work_time/entry_time')->getValue();
+            $exit_work_time = $this->rtdb->getReference('/work_time/exit_time')->getValue();
+
+            $work_time = $entry_work_time . ' - ' . $exit_work_time;
             if ($division == 'Food and Beverage') {
                 $part_timers = $this->firestore->collection('part_timer')
                     ->where('uid', 'array-contains', $uid)
@@ -69,7 +72,7 @@ class PresenceController extends Controller
             }
         } catch (\Throwable $th) {
             return response()->json([
-                'message' => 'insert data to database failed',
+                'message' => 'failed to get work time',
                 'errors' => $th->getMessage()
             ], 400);
         }
@@ -103,11 +106,19 @@ class PresenceController extends Controller
                 ->snapshot();
 
             $name = $user->get('name');
-            $division = $user->get('division');
-
             $date = $request->date;
             $month = $request->month;
             $year = $request->year;
+
+            $entry = $this->firestore->collection('presence_history')->document($name . '-' . $date . $month . $year);
+            $entry_snapshot = $entry->snapshot();
+
+            if ($entry_snapshot->exists()) {
+                return response()->json([
+                    'message' => 'Presensi masuk sudah tercatat.'
+                ]);
+            }
+
             $time = $request->time;
             $latitude = $request->latitude;
             $longitude = $request->longitude;
@@ -115,6 +126,16 @@ class PresenceController extends Controller
             $entry_time = new Timestamp(new \DateTime($date . '-' . $month . '-' . $year . ' ' . $time));
             $entry_location = new GeoPoint($latitude, $longitude);
 
+            $GOOGLE_API_KEY = 'AIzaSyCq5KQ9guAzQHQGUq0wfGJqt3ud2ZBgzNo';
+
+            $formatted_latlng = trim($latitude) . ',' . trim($longitude);
+            $geocodeFromLatLng = file_get_contents("https://maps.googleapis.com/maps/api/geocode/json?latlng={$formatted_latlng}&key={$GOOGLE_API_KEY}");
+            $apiResponse = json_decode($geocodeFromLatLng);
+            $location = $apiResponse->results[1]->formatted_address;
+
+            if (explode(',', $location)[0] == 'W93Q+2R8') $location = 'ATNAVA Coffee & Space';
+
+            $division = $user->get('division');
             $status = 'Tepat Waktu';
             if ($division == 'Food and Beverage') {
                 $part_timers = $this->firestore->collection('part_timer')
@@ -128,24 +149,17 @@ class PresenceController extends Controller
 
                 if ($category != null) {
                     $entry_part_time = $this->rtdb->getReference('/part_time/' . $category . '/entry_time')->getValue();
-                    if (strtotime($time) > strtotime($entry_part_time)) {
-                        $status = 'Terlambat';
-                    }
+                    if (strtotime($time) >= strtotime($entry_part_time) + 60) $status = 'Terlambat';
                 } else {
                     $entry_full_time = $this->rtdb->getReference('/full_time/entry_time')->getValue();
-                    if (strtotime($time) > strtotime($entry_full_time)) {
-                        $status = 'Terlambat';
-                    }
+                    if (strtotime($time) >= strtotime($entry_full_time) + 60) $status = 'Terlambat';
                 }
             } else if ($division == 'Technology Service') {
-                if (strtotime($time) > strtotime("10:00")) {
-                    $status = 'Terlambat';
-                }
+                $entry_work_time = $this->rtdb->getReference('/work_time/entry_time')->getValue();
+                if (strtotime($time) >= (strtotime($entry_work_time) + 60)) $status = 'Terlambat';
             } else {
                 $status = 'Unknown';
             }
-
-            $entry = $this->firestore->collection('presence_history')->document($name . '-' . $date . $month . $year);
 
             $entry->set([
                 'uid' => $uid,
@@ -156,10 +170,10 @@ class PresenceController extends Controller
                 'year' => $year,
                 'entry_time' => $entry_time,
                 'exit_time' => null,
-                // 'entry_note' => $request->entry_,
-                // 'exit_note' => null,
                 'entry_location' => $entry_location,
                 'exit_location' => null,
+                'arrival_location' => $location,
+                'departure_location' => null,
                 'status' => $status,
                 'button_state' => true
             ]);
@@ -171,6 +185,7 @@ class PresenceController extends Controller
         }
 
         return response()->json([
+            'message' => 'Presensi berhasil',
             'button_state' => true
         ]);
     }
@@ -198,22 +213,39 @@ class PresenceController extends Controller
                 ->snapshot()
                 ->get('name');
 
+            $time = $request->time;
+            $exit_work_time = $this->rtdb->getReference('/work_time/exit_time')->getValue();
+
+            if (strtotime($time) < (strtotime($exit_work_time))) {
+                return response()->json([
+                    'message' => 'Jam kerja belum berakhir',
+                ]);
+            };
+
             $date = $request->date;
             $month = $request->month;
             $year = $request->year;
-            $time = $request->time;
             $latitude = $request->latitude;
             $longitude = $request->longitude;
 
             $exit_time = new Timestamp(new \DateTime($date . '-' . $month . '-' . $year . ' ' . $time));
             $exit_location = new GeoPoint($latitude, $longitude);
 
+            $GOOGLE_API_KEY = 'AIzaSyCq5KQ9guAzQHQGUq0wfGJqt3ud2ZBgzNo';
+
+            $formatted_latlng = trim($latitude) . ',' . trim($longitude);
+            $geocodeFromLatLng = file_get_contents("https://maps.googleapis.com/maps/api/geocode/json?latlng={$formatted_latlng}&key={$GOOGLE_API_KEY}");
+            $apiResponse = json_decode($geocodeFromLatLng);
+            $location = $apiResponse->results[1]->formatted_address;
+
+            if (explode(',', $location)[0] == 'W93Q+2R8') $location = 'ATNAVA Coffee & Space';
+
             $exit = $this->firestore->collection('presence_history')->document($name . '-' . $date . $month . $year);
 
             $exit->update([
                 ['path' => 'exit_time', 'value' => $exit_time],
-                // ['path' => 'exit_note', 'value' => $request->exit_note],
                 ['path' => 'exit_location', 'value' => $exit_location],
+                ['path' => 'departure_location', 'value' => $location],
                 ['path' => 'button_state', 'value' => false]
             ]);
         } catch (\Throwable $th) {
@@ -224,6 +256,7 @@ class PresenceController extends Controller
         }
 
         return response()->json([
+            'message' => 'Presensi berhasil',
             'button_state' => false
         ]);
     }
@@ -456,9 +489,16 @@ class PresenceController extends Controller
 
     public function getUid(Request $request)
     {
-        $token = $request->bearerToken();
-        $verifiedIdToken = $this->auth->verifyIdToken($token);
-        $uid = $verifiedIdToken->claims()->get('sub');
+        try {
+            $token = $request->bearerToken();
+            $verifiedIdToken = $this->auth->verifyIdToken($token, true);
+            $uid = $verifiedIdToken->claims()->get('sub');
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'The Firebase ID token has been revoked',
+                'errors' => $th->getMessage()
+            ], 401);
+        }
 
         return $uid;
     }
