@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
 Route::post('/sign_up', [AuthController::class, 'sign_up']); //Sign Up
 Route::post('/login', [AuthController::class, 'login']); //Login
 Route::post('/forgot_password', [AuthController::class, 'forgot_password']); //Lupa Password
@@ -43,15 +44,19 @@ Route::group(['middleware' => 'firebase'], function () {
     Route::get('/projects/{project_id}', [ProjectController::class, 'project_detail']); //Detail Proyek
 
     Route::group(['middleware' => 'admin'], function () {
-        Route::get('/profile_admin', [AdminController::class, 'profile']); //Profile Admin
+        Route::get('/profile_admin', [AdminController::class, 'profile']); //Profil Admin
         Route::get('/logout_admin', [AdminController::class, 'logout']); //Logout Admin
         Route::get('/dashboard', [AdminController::class, 'dashboard']); //Dashboard
-        Route::post('/full_time', [AdminController::class, 'full_time_add']); //Add Full Time
-        Route::post('/part_time', [AdminController::class, 'part_time_add']); //Add Part Time
-        Route::put('/part_time/{category}', [AdminController::class, 'part_time_update']); //Add Part Time
-        Route::delete('/part_time/{category}', [AdminController::class, 'part_time_delete']); //Add Part Time
-        Route::post('/create_project', [ProjectController::class, 'create_project']); //Buat Proyek
-        Route::put('/projects/{project_id}', [ProjectController::class, 'update_project']); //Update Proyek
+        Route::post('/work_time', [AdminController::class, 'work_time_add']); //Update Jam Kerja Kantor
+        Route::post('/full_time', [AdminController::class, 'full_time_add']); //Update Jam Kerja Cafe Full Time
+        Route::post('/part_time', [AdminController::class, 'part_time_add']); //Tambah Jam Kerja Cafe Part Time
+        Route::put('/part_time/{category}', [AdminController::class, 'part_time_update']); //Update Jam Kerja Cafe Part Time
+        Route::delete('/part_time/{category}', [AdminController::class, 'part_time_delete']); //Hapus Jam Kerja Cafe Part Time
+        Route::post('/create_project', [ProjectController::class, 'create_project']); //Tambah Proyek
+        Route::put('/projects/{project_id}', [ProjectController::class, 'update_project']); //Edit Proyek
         Route::delete('/projects/{project_id}', [ProjectController::class, 'delete_project']); //Hapus Proyek
     });
 });
+
+Route::get('/translate_geolocation', [AdminController::class, 'translate_geolocation']); //Translate Lokasi Presensi
+Route::post('/active_employee', [AdminController::class, 'active_employee_add']); //Update Karyawan Aktif
