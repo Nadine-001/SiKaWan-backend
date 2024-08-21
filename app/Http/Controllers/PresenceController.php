@@ -115,7 +115,8 @@ class PresenceController extends Controller
 
             if ($entry_snapshot->exists()) {
                 return response()->json([
-                    'message' => 'Presensi masuk sudah tercatat.'
+                    'message' => 'Presensi masuk sudah tercatat.',
+                    'button_state' => false
                 ]);
             }
 
@@ -219,6 +220,7 @@ class PresenceController extends Controller
             if (strtotime($time) < (strtotime($exit_work_time))) {
                 return response()->json([
                     'message' => 'Jam kerja belum berakhir',
+                    'button_state' => true
                 ]);
             };
 
