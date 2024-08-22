@@ -214,6 +214,20 @@ class PresenceController extends Controller
                 ->snapshot()
                 ->get('name');
 
+            $date = $request->date;
+            $month = $request->month;
+            $year = $request->year;
+
+            $exit = $this->firestore->collection('presence_history')->document($name . '-' . $date . $month . $year);
+            $exit_snapshot = $exit->snapshot();
+
+            if (!$exit_snapshot->exists()) {
+                return response()->json([
+                    'message' => 'Lakukan presensi masuk terlebih dahulu',
+                    'button_state' => true
+                ], 409);
+            }
+
             $time = $request->time;
             $exit_work_time = $this->rtdb->getReference('/work_time/exit_time')->getValue();
 
@@ -224,9 +238,6 @@ class PresenceController extends Controller
                 ], 409);
             };
 
-            $date = $request->date;
-            $month = $request->month;
-            $year = $request->year;
             $latitude = $request->latitude;
             $longitude = $request->longitude;
 
@@ -242,7 +253,6 @@ class PresenceController extends Controller
 
             if (explode(',', $location)[0] == 'W93Q+2R8') $location = 'ATNAVA Coffee & Space';
 
-            $exit = $this->firestore->collection('presence_history')->document($name . '-' . $date . $month . $year);
 
             $exit->update([
                 ['path' => 'exit_time', 'value' => $exit_time],
