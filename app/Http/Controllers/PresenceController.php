@@ -253,7 +253,6 @@ class PresenceController extends Controller
 
             if (explode(',', $location)[0] == 'W93Q+2R8') $location = 'ATNAVA Coffee & Space';
 
-
             $exit->update([
                 ['path' => 'exit_time', 'value' => $exit_time],
                 ['path' => 'exit_location', 'value' => $exit_location],
@@ -478,8 +477,8 @@ class PresenceController extends Controller
                     ->count();
 
 
-                $on_time_percent = $on_time_day / ($on_time_day + $late_day) * 100;
-                $late_percent = $late_day / ($on_time_day + $late_day) * 100;
+                $on_time_percent = round($on_time_day / ($on_time_day + $late_day) * 100, 2);
+                $late_percent = round($late_day / ($on_time_day + $late_day) * 100, 2);
             } else {
                 $on_time_percent = 0;
                 $late_percent = 0;
