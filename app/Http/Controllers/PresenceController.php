@@ -32,10 +32,11 @@ class PresenceController extends Controller
         $uid = $this->getUid($request);
 
         try {
+            date_default_timezone_set('Asia/Jakarta');
+
             $user = $this->firestore->collection('users')
                 ->document($uid)
                 ->snapshot();
-
 
             if (!$user->exists()) {
                 return response()->json([
@@ -43,12 +44,17 @@ class PresenceController extends Controller
                 ], 404);
             }
 
-            $division = $user->get('division');
-
             $entry_work_time = $this->rtdb->getReference('/work_time/entry_time')->getValue();
+
             $exit_work_time = $this->rtdb->getReference('/work_time/exit_time')->getValue();
+            if (date('l') == 'Saturday') {
+                $exit_work_time = strtotime($exit_work_time . " -4 hours");
+                $exit_work_time = date('H:i', $exit_work_time);
+            }
 
             $work_time = $entry_work_time . ' - ' . $exit_work_time;
+
+            $division = $user->get('division');
             if ($division == 'Food and Beverage') {
                 $part_timers = $this->firestore->collection('part_timer')
                     ->where('uid', 'array-contains', $uid)
@@ -209,10 +215,11 @@ class PresenceController extends Controller
         $uid = $this->getUid($request);
 
         try {
-            $name = $this->firestore->collection('users')
+            $user = $this->firestore->collection('users')
                 ->document($uid)
-                ->snapshot()
-                ->get('name');
+                ->snapshot();
+
+            $name = $user->get('name');
 
             $date = $request->date;
             $month = $request->month;
@@ -228,9 +235,31 @@ class PresenceController extends Controller
                 ], 409);
             }
 
-            $time = $request->time;
-            $exit_work_time = $this->rtdb->getReference('/work_time/exit_time')->getValue();
+            $division = $user->get('division');
+            if ($division == 'Food and Beverage') {
+                $part_timers = $this->firestore->collection('part_timer')
+                    ->where('uid', 'array-contains', $uid)
+                    ->documents();
 
+                $category = null;
+                foreach ($part_timers as $part_timer) {
+                    $category =  $part_timer->id();
+                }
+
+                if ($category != null) {
+                    $exit_work_time = $this->rtdb->getReference('/part_time/' . $category . '/exit_time')->getValue();
+                } else {
+                    $exit_work_time = $this->rtdb->getReference('/full_time/exit_time')->getValue();
+                }
+            } else {
+                $exit_work_time = $this->rtdb->getReference('/work_time/exit_time')->getValue();
+                if (date('l') == 'Saturday') {
+                    $exit_work_time = strtotime($exit_work_time . " -4 hours");
+                    $exit_work_time = date('H:i', $exit_work_time);
+                }
+            }
+
+            $time = $request->time;
             if (strtotime($time) < (strtotime($exit_work_time))) {
                 return response()->json([
                     'message' => 'Jam kerja belum berakhir',
@@ -470,12 +499,10 @@ class PresenceController extends Controller
                     ->where('year', '==', intval(date('Y')))
                     ->count();
 
-
                 $late_day = $presence_history->where('status', '==', 'Terlambat')
                     ->where('month', '==', intval(date('n')))
                     ->where('year', '==', intval(date('Y')))
                     ->count();
-
 
                 $on_time_percent = round($on_time_day / ($on_time_day + $late_day) * 100, 2);
                 $late_percent = round($late_day / ($on_time_day + $late_day) * 100, 2);
