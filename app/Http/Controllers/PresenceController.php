@@ -144,6 +144,7 @@ class PresenceController extends Controller
 
             $division = $user->get('division');
             $status = 'Tepat Waktu';
+            $late_time = 0;
             if ($division == 'Food and Beverage') {
                 $part_timers = $this->firestore->collection('part_timer')
                     ->where('uid', 'array-contains', $uid)
@@ -156,14 +157,23 @@ class PresenceController extends Controller
 
                 if ($category != null) {
                     $entry_part_time = $this->rtdb->getReference('/part_time/' . $category . '/entry_time')->getValue();
-                    if (strtotime($time) >= strtotime($entry_part_time) + 60) $status = 'Terlambat';
+                    if (strtotime($time) >= strtotime($entry_part_time) + 60) {
+                        $status = 'Terlambat';
+                        $late_time = strtotime($time) - (strtotime($entry_part_time) + 60);
+                    }
                 } else {
                     $entry_full_time = $this->rtdb->getReference('/full_time/entry_time')->getValue();
-                    if (strtotime($time) >= strtotime($entry_full_time) + 60) $status = 'Terlambat';
+                    if (strtotime($time) >= strtotime($entry_full_time) + 60) {
+                        $status = 'Terlambat';
+                        $late_time = strtotime($time) - (strtotime($entry_full_time) + 60);
+                    }
                 }
             } else if ($division == 'Technology Service') {
                 $entry_work_time = $this->rtdb->getReference('/work_time/entry_time')->getValue();
-                if (strtotime($time) >= (strtotime($entry_work_time) + 60)) $status = 'Terlambat';
+                if (strtotime($time) >= (strtotime($entry_work_time) + 60)) {
+                    $status = 'Terlambat';
+                    $late_time = strtotime($time) - (strtotime($entry_work_time) + 60);
+                }
             } else {
                 $status = 'Unknown';
             }
@@ -177,6 +187,7 @@ class PresenceController extends Controller
                 'year' => $year,
                 'entry_time' => $entry_time,
                 'exit_time' => null,
+                'late_time' => gmdate('H:i:s', $late_time),
                 'entry_location' => $entry_location,
                 'exit_location' => null,
                 'arrival_location' => $location,
