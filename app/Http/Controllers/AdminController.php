@@ -256,6 +256,14 @@ class AdminController extends Controller
 
             $presence_list = [];
             foreach ($documents as $document) {
+                $data = $document->data();
+
+                if (!array_key_exists('late_time', $data)) {
+                    $late_time = null;
+                } else {
+                    $late_time = $document->get('late_time');
+                }
+
                 $name = $document->get('name');
 
                 $entry_time = $document->get('entry_time');
@@ -289,6 +297,7 @@ class AdminController extends Controller
                     'date' => Carbon::parse("$date $month_name $year")->format('d F Y'),
                     'entry_time' => $entry_time,
                     'exit_time' => $exit_time,
+                    'late_time' => $late_time,
                     'arrival_location' => $arrival_location,
                     'departure_location' => $departure_location,
                     'status' => $status,
