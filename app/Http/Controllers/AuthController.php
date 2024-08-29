@@ -312,9 +312,16 @@ class AuthController extends Controller
 
     public function getUid(Request $request)
     {
-        $token = $request->bearerToken();
-        $verifiedIdToken = $this->auth->verifyIdToken($token);
-        $uid = $verifiedIdToken->claims()->get('sub');
+        try {
+            $token = $request->bearerToken();
+            $verifiedIdToken = $this->auth->verifyIdToken($token, true);
+            $uid = $verifiedIdToken->claims()->get('sub');
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'The Firebase ID token has been revoked',
+                'errors' => $th->getMessage()
+            ], 401);
+        }
 
         return $uid;
     }

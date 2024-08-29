@@ -39,7 +39,7 @@ class AdminMiddleware
 
         $auth = app('firebase.auth');
         try {
-            $verifiedIdToken = $auth->verifyIdToken($token);
+            $verifiedIdToken = $auth->verifyIdToken($token, true);
         } catch (FailedToVerifyToken $e) {
             return response()->json([
                 'message' => 'invalid token',

@@ -26,7 +26,7 @@ class FirebaseMiddleware
                 throw new FailedToVerifyToken('token can not be null');
             }
 
-            $verifiedIdToken = $auth->verifyIdToken($token);
+            $verifiedIdToken = $auth->verifyIdToken($token, true);
             return $next($request);
         } catch (FailedToVerifyToken $e) {
             return response()->json([
