@@ -187,6 +187,8 @@ class PresenceController extends Controller
                 'year' => $year,
                 'entry_time' => $entry_time,
                 'exit_time' => null,
+                'entry_note' => $request->entry_note,
+                'exit_note' => null,
                 'late_time' => gmdate('H:i:s', $late_time),
                 'entry_location' => $entry_location,
                 'exit_location' => null,
@@ -295,6 +297,7 @@ class PresenceController extends Controller
 
             $exit->update([
                 ['path' => 'exit_time', 'value' => $exit_time],
+                ['path' => 'exit_note', 'value' => $request->exit_note],
                 ['path' => 'exit_location', 'value' => $exit_location],
                 ['path' => 'departure_location', 'value' => $location],
                 ['path' => 'button_state', 'value' => false]

@@ -258,11 +258,15 @@ class AdminController extends Controller
             foreach ($documents as $document) {
                 $data = $document->data();
 
-                if (!array_key_exists('late_time', $data)) {
-                    $late_time = null;
-                } else {
-                    $late_time = $document->get('late_time');
-                }
+                $late_time = $this->check_field($data, $document, 'late_time');
+                $entry_note = $this->check_field($data, $document, 'entry_note');
+                $exit_note = $this->check_field($data, $document, 'exit_note');
+
+                // if (!array_key_exists('late_time', $data)) {
+                //     $late_time = null;
+                // } else {
+                //     $late_time = $document->get('late_time');
+                // }
 
                 $name = $document->get('name');
 
@@ -298,6 +302,8 @@ class AdminController extends Controller
                     'entry_time' => $entry_time,
                     'exit_time' => $exit_time,
                     'late_time' => $late_time,
+                    'entry_note' => $entry_note,
+                    'exit_note' => $exit_note,
                     'arrival_location' => $arrival_location,
                     'departure_location' => $departure_location,
                     'status' => $status,
@@ -588,5 +594,15 @@ class AdminController extends Controller
         }
 
         return $uid;
+    }
+
+    public function check_field($columns, $record, $field) {
+        if (!array_key_exists($field, $columns)) {
+            $new_field = null;
+        } else {
+            $new_field = $record->get($field);
+        }
+
+        return $new_field;
     }
 }
